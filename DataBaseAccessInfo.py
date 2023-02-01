@@ -12,7 +12,7 @@ logger.addHandler(file_handler)
 logger.propagate = False
 
 
-class DataBaseAccesser:
+class DataBaseAccessInfo:
     # region constants for server info
     config_object = ConfigParser()
     config_object.read("config.ini")
@@ -35,7 +35,6 @@ class DataBaseAccesser:
     TFPASSWORD = info["TFPASSWORD"]
 
     CALIGULA = info["CALIGULA"]
-    # endregion
 
     SERVERNAME = {
         'COREServer': CORESERVER,

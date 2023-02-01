@@ -1,6 +1,18 @@
-from configparser import ConfigParser
-class DataBaseAccesser:
+import logging
+from logging.handlers import RotatingFileHandler
 
+from configparser import ConfigParser
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s:%(name)s:%(funcName)s:%(levelname)s:%(message)s')
+file_handler = RotatingFileHandler('logs\DataBaseAccessInfo.log', mode='a', maxBytes=1024, backupCount=1)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.propagate = False
+
+
+class DataBaseAccesser:
     # region constants for server info
     config_object = ConfigParser()
     config_object.read("config.ini")
@@ -53,6 +65,7 @@ class DataBaseAccesser:
     DRIVER = {
         'ODBC17': '{ODBC Driver 17 for SQL Server}'
     }
+
     # endregion constants for server info
 
     def __init__(self, driver, servername: str, database: str, userid: str, password: str):

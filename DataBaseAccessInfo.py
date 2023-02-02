@@ -17,7 +17,7 @@ class DataBaseAccessInfo:
     config_object = ConfigParser()
     config_object.read("config.ini")
 
-    info = config_object['DATABASEACCESSINFO']
+    info = config_object['DATABASE ACCESS INFO']
 
     CORESERVER = info["CORESERVER"]
     CC3SERVER = info["CC3SERVER"]

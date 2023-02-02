@@ -21,7 +21,7 @@ dpull = DataPuller.DataPuller()
 
 
 def create_path(projectid):
-    if os.path.exists(f"i:/PROJ/{projectid}/PRODUCTION/") == False:
+    if os.path.exists(f"{file_paths['SRC']}{projectid}/PRODUCTION/") == False:
         src = f"{file_paths['SRC']}PRODUCTION/BLANK Production.xlsx"
         os.mkdir(f"{file_paths['SRC']}{projectid}/PRODUCTION/")
         dst = f"{file_paths['SRC']}{projectid}/PRODUCTION/{projectid}_Production_Report.xlsx"

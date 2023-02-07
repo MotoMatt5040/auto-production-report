@@ -10,11 +10,9 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.propagate = False
 
+
 class SQLDictionary:
 
-
-
     def project_id_list(self, qry):
-
         projectids = f"{qry}'{str(date.today() - timedelta(1))}'"
         return projectids

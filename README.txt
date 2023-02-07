@@ -1,7 +1,10 @@
 Required setup in order for program to work properly:
+
     config.ini file with the following fields
+
         [FILE PATHS]
         SRC = <path>
+
         [DATABASE ACCESS INFO]
         CORESERVER = <ip>
         CC3SERVER = <ip>
@@ -16,6 +19,8 @@ Required setup in order for program to work properly:
         ARCHIVECC3PASSWORD = <password>
         TFPASSWORD = <password>
         CALIGULA = <database>
+
         [SQL CODE]
         ActiveProjectIDs = <qry>
+
     Adjust variables as needed.

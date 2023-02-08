@@ -1,15 +1,10 @@
 import logging
-from logging.handlers import RotatingFileHandler
-
-import bcrypt
-import numpy as np
-import pandas
 import pandas as pd
 from sqlalchemy import create_engine
-import math
+from logging.handlers import RotatingFileHandler
 
-import DataBaseAccessInfo as dbai
-import SQLDictionary as sqld
+import DataBaseAccessInfo
+import SQLDictionary
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -20,9 +15,10 @@ logger.addHandler(file_handler)
 logger.propagate = False
 
 class DataPuller:
+    sqld = SQLDictionary.SQLDictionary()
 
     #  initialize database access info to connect to database
-    DB_INFO = dbai.DataBaseAccessInfo(
+    dbai = DataBaseAccessInfo.DataBaseAccessInfo(
         driver='ODBC17',
         servername='COREServer',
         database='Caligula',
@@ -32,22 +28,35 @@ class DataPuller:
 
     #  Build the connection string
     SQL_CONNECTION = 'DRIVER={};SERVER={};DATABASE={};UID={};PWD={}'.format(
-        DB_INFO.get_driver(),
-        DB_INFO.get_server(),
-        DB_INFO.get_database(),
-        DB_INFO.get_user_id(),
-        DB_INFO.get_password()
+        dbai.get_driver(),
+        dbai.get_server(),
+        dbai.get_database(),
+        dbai.get_user_id(),
+        dbai.get_password()
     )
+    del dbai
     dbcon = f'mssql+pyodbc:///?odbc_connect={SQL_CONNECTION}'
     engine = create_engine(dbcon)
+    del dbcon
 
-    def pull_data(self, qry: str):
+    def activeProjectIDs(self):
         try:
             cnxn = self.engine.connect()
-            df = pd.read_sql_query(qry, cnxn)
+            df = pd.read_sql_query(self.sqld.project_id_list(), cnxn)
             cnxn.close()
+            del cnxn
             return df
         except Exception as err:
             logger.critical(err)
         return []
 
+    def gpcph(self):
+        try:
+            cnxn = self.engine.connect()
+            df = pd.read_sql_query(self.sqld.gpcph(), cnxn)
+            cnxn.close()
+            del cnxn
+            return df
+        except Exception as err:
+            logger.critical(err)
+        return []

@@ -35,6 +35,7 @@ class DataBaseAccessInfo:
     TFPASSWORD = info["TFPASSWORD"]
 
     CALIGULA = info["CALIGULA"]
+    del config_object
 
     SERVERNAME = {
         'COREServer': CORESERVER,
@@ -64,7 +65,6 @@ class DataBaseAccessInfo:
     DRIVER = {
         'ODBC17': '{ODBC Driver 17 for SQL Server}'
     }
-
     # endregion constants for server info
 
     def __init__(self, driver, servername: str, database: str, userid: str, password: str):

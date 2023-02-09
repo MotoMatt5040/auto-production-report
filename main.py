@@ -1,9 +1,6 @@
-import os
-import shutil
 import DataPuller
 import WorkbookHandler
 from configparser import ConfigParser
-from typing import Union
 
 
 config_object = ConfigParser()
@@ -16,84 +13,56 @@ dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
 
 
-def create_path(projectid):
-    if os.path.exists(f"{file_paths['SRC']}{projectid}/PRODUCTION/") == False:
-        src = f"{file_paths['SRC']}PRODUCTION/BLANK Production.xlsm"
-        os.mkdir(f"{file_paths['SRC']}{projectid}/PRODUCTION/")
-        dst = f"{file_paths['SRC']}{projectid}/PRODUCTION/{projectid}_Production_ReportTEST.xlsm"
-        shutil.copy(src, dst)
-        del src, dst
-    elif os.path.exists(f"{file_paths['SRC']}{projectid}/PRODUCTION/{projectid}_Production_ReportTEST.xlsm") == False:
-        src = f"{file_paths['SRC']}PRODUCTION/BLANK Production.xlsm"
-        dst = f"{file_paths['SRC']}{projectid}/PRODUCTION/{projectid}_Production_ReportTEST.xlsm"
-        shutil.copy(src, dst)
-        del src, dst
-    else:
-        print('Directory exists')
-        pass
-
-    return f"{file_paths['SRC']}{projectid}/PRODUCTION/{projectid}_Production_ReportTEST.xlsm"
-
-
-def read_excel(path: str, sheetTitle: str, projectid: Union[int, str]):
-    wh.setProjectID(projectid)
-    wh.setWorkbook(path)
-    wh.setActiveSheet(wh.getWorkbook().sheets[0])
-    print(wh.getActiveSheet().name)
-    wh.setActiveSheetTitle(sheetTitle)
-    print(wh.getActiveSheetTitle())
-    wh.copyRows(10)
-    wh.populateExpectedLOI()
-    wh.copySheet()
+def read_excel():
+    wh.setWorkbook()
+    try:
+        if wh.getProjectCode().upper()[-1] == "C":
+            wh.setActiveSheet("PROJ#C DATE")
+            print('cell')
+        else:
+            wh.setActiveSheet("PROJ# DATE")
+            print('ll')
+    except Exception as err:
+        print(err)
+        wh.copySheet()
+        if wh.getProjectCode().upper()[-1] == "C":
+            wh.setActiveSheet("PROJ#C DATE")
+            print('cell')
+        else:
+            wh.setActiveSheet("PROJ# DATE")
+            print('ll')
+    print(wh.getActiveSheetName())
+    wh.setActiveSheetName(f"{wh.getProjectCode()}")
+    print(wh.getActiveSheet())
+    wh.copyRows(5)
     wh.save()
     wh.close()
 
 
-
-
-    # wb = load_workbook(path)
-    # sheet1 = wb[wb.sheetnames[0]]
-    # print(sheetname)
-    # print()
-    # print(sheet1.title)
-    # print()
-
-
-# create_path(12523)
 active_id_df = dpull.activeProjectIDs()
-active_dict = dict.fromkeys(active_id_df['projectid'])
+# active_dict = dict.fromkeys(active_id_df['projectid'])
 
-active_dict = {'12523': '12523',
-               '12523C': '12523',
-               '12517': '12517'
+
+activeDict = {'12523': '12523',
+               '12523C': '12523'
                }
 
+
 prev = None
-for key in active_dict:
-    active_dict[key] = key[:5]
-    if prev is None or prev != active_dict[key]:
-        path = create_path(active_dict[key])
-
-    elif prev == active_dict[key]:
-        print(f'RUNNING {active_dict[key]} again')
-    prev = active_dict[key]
-    read_excel(path, key, active_dict[key])
-    # wh.close()
-    # print(path)
-
-
-
-# keys = list(active_dict.keys())
-# prev = None
-# for key in active_dict:
-#     if prev is not None or prev != key:
-#         create_path(active_dict[key])
-#     prev = key
+for key in activeDict:
+    projectNumber = key[:5]
+    wh.setProjectID(projectNumber)
+    wh.setProjectCode(key)
+    wh.setPath(f"{file_paths['SRC']}{wh.getProjectID()}/PRODUCTION/{wh.getProjectID()}_Production_ReportTEST.xlsm")
+    if prev is None or prev != activeDict[key]:
+        wh.checkPath()
+    elif prev == activeDict[key]:
+        pass
+    prev = activeDict[key]
+    read_excel()
 
 
-
-
-print(active_dict)
+print(activeDict)
 active_id_list_details = list(active_id_df['projectid'])
 active_id_list = [projectid[:5] for projectid in active_id_list_details]
 

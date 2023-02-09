@@ -1,7 +1,6 @@
 import pandas as pd
 import os
-import win32com.client
-import numpy as np
+import shutil
 
 from typing import Union
 from datetime import date, datetime
@@ -18,36 +17,51 @@ class WorkbookHandler():
 
 
     def __init__(self):
+        self._projectid = None
+        self._projectCode = None
+        self._path = None
         self._wb = None
         self._activeSheet = None
-        self._activeSheetTitle = None
-        self._projectid = None
-        self._path = None
+        self._activeSheetName = None
 
-    def populateProjectNumber(self, project: Union[str, int]):
+    def populateAll(self):
         """
-        Populates project number
-        :param project: Project number
+        Populates all fields in sheet
         :return: None
         """
-        self._activeSheet.cell(row=1, column=1).value = project
+        self.populateProjectID()
+        self.populateProjectName(self._projectCode)  # this needs to be changed to E.g. (HEPA National (CRC))
+        self.populateDate()
+        self.populateDailyINC(0)  # get from sql qry
+        self.populateExpectedLOI()  # get from planner
+        self.populateAVGDailyLOI(0)   # get from sql qry
+        self.populateAVGOverallLOI(0)  # get from sql qry
 
-    def populateProjectName(self, projectName: str):
+    def populateProjectID(self) -> None:
+        """
+        Populates Project ID
+        :param project: Project ID
+        :return: None
+        """
+        self._activeSheet.cell(row=1, column=1).value = self._projectCode
+
+    def populateProjectName(self, projectName: str) -> None:
         """
         Populates project name
         :param projectName: Project name
         :return: None
         """
+        # TODO run qry to pull project name
         self._activeSheet.cell(row=1, column=2).value = projectName
 
-    def populateDate(self):
+    def populateDate(self) -> None:
         """
         Populates date
         :return: None
         """
         self._activeSheet.cell(row=2, column=1).value = datetime.now().strftime("%B %d, %Y (%a)")
 
-    def populateDailyINC(self, inc: float):
+    def populateDailyINC(self, inc: float) -> None:
         """
         Populates Daily Incidence
         :param inc: Daily incedence
@@ -55,7 +69,7 @@ class WorkbookHandler():
         """
         self._activeSheet.cell(row=2, column=18).value = inc
 
-    def populateAVGDailyLOI(self, loi):
+    def populateAVGDailyLOI(self, loi) -> None:
         """
         Populates Avg. Daily LOI
         :param loi: AVG Daily LOI
@@ -63,7 +77,7 @@ class WorkbookHandler():
         """
         self._activeSheet.cell(row=3, column=18).value = loi
 
-    def populateAVGOverallLOI(self, loi):
+    def populateAVGOverallLOI(self, loi) -> None:
         """
         Populates Avg. Overall LOI
         :param loi: AVG Overall LOI
@@ -71,25 +85,42 @@ class WorkbookHandler():
         """
         self._activeSheet.cell(row=4, column=18).value = loi
 
-    def copyRows(self, count):
+    def copyRows(self, count) -> None:
         """
         Extends rows
         :param count: Number of rows to copy
         :return: None
         """
-        for i in range(count-1):
-            row = i + 9
-            self._activeSheet[f"G{row}"].value = f"=(E{row} - F{row}) * 60"
-            self._activeSheet[f"I{row}"].value = f"=(H{row}) * 60"
-            self._activeSheet[f"J{row}"].value = f"=IFERROR(H{row}/E{row},0)"
-            self._activeSheet[f"K{row}"].value = f"=IFERROR(IF(G{row}>0,(G{row}+I{row})/(E{row}*60),I{row}/(E{row}*60)),0)"
-            self._activeSheet[f"M{row}"].value = f"=IFERROR(ROUND(E{row}*$U$1,2),0)"
-            self._activeSheet[f"N{row}"].value = f"=L{row}-M{row}"
-            self._activeSheet[f"O{row}"].value = f"=RANK(N{row},$N$8:$N$140)"
-            self._activeSheet[f"P{row}"].value = f"=IFERROR(T{row}/$AC$85,0)"
-            self._activeSheet[f"R{row}"].value = f"=IFERROR(L{row}/E{row},0)"
-            self._activeSheet[f"V{row}"].value = f"=IFERROR(T{row}/E{row},0)"
-        print(self._activeSheet.title, "extending rows")
+        count += 7  # First row is 8, so we must add 7 to be inclusive
+        formula = self.getActiveSheet().range("G8").formula
+        self.getActiveSheet().range(f"G8:G{count}").formula = formula
+
+        formula = self.getActiveSheet().range("I8").formula
+        self.getActiveSheet().range(f"I8:I{count}").formula = formula
+
+        formula = self.getActiveSheet().range("J8").formula
+        self.getActiveSheet().range(f"J8:J{count}").formula = formula
+
+        formula = self.getActiveSheet().range("K8").formula
+        self.getActiveSheet().range(f"K8:K{count}").formula = formula
+
+        formula = self.getActiveSheet().range("M8").formula
+        self.getActiveSheet().range(f"M8:M{count}").formula = formula
+
+        formula = self.getActiveSheet().range("N8").formula
+        self.getActiveSheet().range(f"N8:N{count}").formula = formula
+
+        formula = self.getActiveSheet().range("O8").formula
+        self.getActiveSheet().range(f"O8:O{count}").formula = formula
+
+        formula = self.getActiveSheet().range("P8").formula
+        self.getActiveSheet().range(f"P8:P{count}").formula = formula
+
+        formula = self.getActiveSheet().range("R8").formula
+        self.getActiveSheet().range(f"R8:R{count}").formula = formula
+
+        formula = self.getActiveSheet().range("V8").formula
+        self.getActiveSheet().range(f"V8:V{count}").formula = formula
 
     def populateExpectedLOI(self, projectid: Union[int, str] = '') -> str:
         """
@@ -115,61 +146,46 @@ class WorkbookHandler():
         Copies sheet
         :return: None
         """
-        self._wb.app.macro(f"copy_LL")
-        print(self._path)
-        self.save()
-        # self.save()
-        # xl = win32com.client.Dispatch("Excel.Application")
-        # wb = xl.workbooks.open(self._path)
-        # xl.run(f"{self._projectid}_Production_ReportTEST.xlsm!Module1.copy_LL")
-        # xl.visible = True
-        # wb.Close(SaveChanges=1)
-        # xl.Quit()
-        # del xl, wb
-        # self.setWorkbook(self._path)
-        # if self._wb.active.title != f"{self._projectid} {date.today().strftime('%m%d')}":
-        #     pass
-        # test = self._wb.copy_worksheet(self._wb.active)
-        # help(self._wb.copy_worksheet)
+        copySheet = self._wb.macro(f"Module1.copySheet") # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
+        if self._projectCode[-1].upper() == "C":
+            copySheet(
+                f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
+                f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
+                self._projectid,
+                2
+            )
+        else:
+            copySheet(
+                f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
+                f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
+                self._projectid,
+                1
+            )
+        del copySheet
 
-    def setPath(self, path: str) -> None:
+    def checkPath(self):
+        if not os.path.exists(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/"):
+            src = f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm"
+            os.mkdir(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/")
+            dst = self.getPath()
+            shutil.copy(src, dst)
+            del src, dst
+        elif not os.path.exists(self.getPath()):
+            src = f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm"
+            dst = self.getPath()
+            shutil.copy(src, dst)
+            del src, dst
+        else:
+            return
+
+    def createSheetName(self):
         """
-        Sets path
-        :param path: Filepath
+        Creates sheet Name
         :return: None
         """
-        self._path = path
+        return f"{self.getProjectCode()} {date.today().strftime('%m%d')}"
 
-    def setWorkbook(self, path) -> None:
-        """
-        Sets workbook
-        :param path: Filepath
-        :return: None
-        """
-        self.app = xw.App(visible=True)
-        self._path = path
-        self._wb = self.app.books.open(self._path)
-        # self._wb = load_workbook(path)
-
-    def setActiveSheet(self, activeSheet: str) -> None:
-        """
-        Sets active sheet
-        :param active: Sheet title
-        :return: None
-        """
-        self._activeSheet = self._wb.sheets[activeSheet]
-        self._wb.active = self._wb.sheets[activeSheet]
-
-    def setActiveSheetTitle(self, sheetTitle: str):
-        """
-        Sets active sheet title
-        :param sheetTitle: Sheet title
-        :return: sheetTitle String
-        """
-        self._activeSheetTitle = f"{sheetTitle} {date.today().strftime('%m%d')}"
-        self._wb.active.title = self._activeSheetTitle
-
-    def setProjectID(self, projectid: Union[int, str]):
+    def setProjectID(self, projectid: Union[int, str]) -> None:
         """
         Sets project ID
         :param projectid: Int or String of Project ID
@@ -179,6 +195,69 @@ class WorkbookHandler():
             self._projectid = str(projectid)
         else:
             self._projectid = projectid
+
+    def setProjectCode(self, projectCode) -> None:
+        """
+        Sets Project Code
+
+        Project code is defined as the projects directory ID.
+        This is needed to identify projects such as #####C and name them accordingly.
+        :param projectCode: Int or String of Project Code
+        :return: None
+        """
+        if type(projectCode) == int:
+            self._projectCode = str(projectCode)
+        else:
+            self._projectCode = projectCode
+
+    def setPath(self, path: str = None) -> None:
+        """
+        Sets path
+        :param path: Filepath
+        :return: None
+        """
+        if path is None:
+            path = f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm"
+        self._path = path
+
+
+    def setWorkbook(self, path: str = None) -> None:
+        """
+        Sets workbook
+        :param path: Filepath
+        :return: None
+        """
+        if path is None:
+            path = self.getPath()
+        self.app = xw.App(visible=True)
+        self._path = path
+        self._wb = self.app.books.open(self._path)
+        # self._wb = load_workbook(path)
+
+    def setActiveSheet(self, activeSheet: Union[int, str] = None) -> None:
+        """
+        Sets active sheet
+        :param activeSheet: Sheet Name
+        :return: None
+        """
+        # print(f"active Sheet: -{activeSheet}-")
+        # if not activeSheet:
+        #     self._activeSheet = self._wb.sheets[f"{}"]
+        if activeSheet is None:
+            activeSheet = f"{self.getActiveSheetName()}"
+        self._wb.active = self.getWorkbook().sheets[activeSheet]
+
+    def setActiveSheetName(self, sheetName: str = None) -> None:
+        """
+        Sets active sheet Name
+        :param sheetName: Sheet Name
+        :return: sheetName String
+        """
+        print(self._projectCode)
+        if sheetName is None:
+            sheetName = self._projectCode
+        self._activeSheetName = f"{sheetName} {date.today().strftime('%m%d')}"
+        self._wb.active.name = self._activeSheetName
 
     def getWorkbook(self):
         """
@@ -194,20 +273,20 @@ class WorkbookHandler():
         Gets active sheet
         :return: Active Sheet
         """
-        if self._activeSheet is None:
+        if self._wb.active is None:
             return 'No active sheet'
-        return self._activeSheet
+        return self._wb.active
 
-    def getActiveSheetTitle(self):
+    def getActiveSheetName(self):
         """
-        Gets active sheet title
-        :return: Active Sheet Title
+        Gets active sheet Name
+        :return: Active Sheet Name
         """
-        if self._activeSheetTitle is None:
-            return 'No active sheet title'
-        return self._activeSheetTitle
+        if self.getActiveSheet().name is None:
+            return 'No active sheet Name'
+        return self.getActiveSheet().name
 
-    def getProjectID(self) -> Union[int, str]:
+    def getProjectID(self) -> str:
         """
         Gets project ID
         :return: Project ID
@@ -216,12 +295,30 @@ class WorkbookHandler():
             return 'No project ID'
         return self._projectid
 
+    def getProjectCode(self) -> str:
+        """
+        Gets project Code
+        :return: Project Code
+        """
+        if self._projectCode is None:
+            return 'No project Code'
+        return self._projectCode
+
+    def getPath(self) -> str:
+        """
+        Gets path
+        :return: Path
+        """
+        if self._path is None:
+            return 'No path'
+        return self._path
+
     def save(self) -> None:
         """
         Saves workbook
         :return: None
         """
-        # TODO Replace with path instead of title
+        # TODO Replace with path instead of Name
         self._wb.save(f"{self._path}")
 
     def close(self) -> None:

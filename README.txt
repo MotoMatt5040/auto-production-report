@@ -22,5 +22,14 @@ Required setup in order for program to work properly:
 
         [SQL CODE]
         ActiveProjectIDs = <qry>
+        GPCPH = <qry>
+        ProductionReport = <qry>
+        ProductionAnd = <qry>
+        ProductionGroupBy = <qry>
+        ProductionReportDispo = <qry>
+        ProductionReportDispoAnd = <qry>
+        ProductionReportDispoSingle = <qry>
+        ProductionReportAVGLength = <qry>
+        ProductioNReportAVGLengthAnd = <qry>
 
     Adjust variables as needed.

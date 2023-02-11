@@ -37,12 +37,16 @@ class SQLDictionary:
         gpcph = f"{qry['GPCPH']} '{str(date.today() - timedelta(1))}'"
         return gpcph
 
-    def production_report(self) -> str:
+    def production_report(self, projectid) -> tuple[str, str, str]:
         """
         Builds production report string for previous day
         :return: String of production report qry
         """
-        productionReport = f"{qry}"
+        productionReport = f"{qry['ProductionReport']}{projectid}{qry['ProductionAnd']}{date.today() - timedelta(1)}{qry['ProductionGroupBy']}"
+        productionReportDispo = f"{qry['ProductionReportDispo']}{projectid}{qry['ProductioNReportDispoAnd']}{date.today() - timedelta(1)}{qry['ProductionReportDispoSingle']}"
+        productionReportAVGLength = f"{qry['ProductionReportAVGLength']}{projectid}{qry['ProductionReportAVGLengthAnd']}{date.today() - timedelta(1)}'"
+
+        return productionReport, productionReportDispo, productionReportAVGLength
 
         #THIS IS ALL STUFF ON TOP
         #df of 2020 planner, exp l where projectid ==
@@ -50,6 +54,8 @@ class SQLDictionary:
         #avg mph avg cph, prod2020
 
         #int data from prod2020
+
+
 
 
 

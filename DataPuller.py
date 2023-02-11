@@ -39,7 +39,7 @@ class DataPuller:
     engine = create_engine(dbcon)
     del dbcon
 
-    def activeProjectIDs(self):
+    def active_project_ids(self):
         try:
             cnxn = self.engine.connect()
             df = pd.read_sql_query(self.sqld.project_id_list(), cnxn)
@@ -60,3 +60,17 @@ class DataPuller:
         except Exception as err:
             logger.critical(err)
         return []
+
+    def production_report(self, projectid) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        try:
+            cnxn = self.engine.connect()
+            productionReport = pd.read_sql_query(self.sqld.production_report(projectid)[0], cnxn)
+            productionReportDispo = pd.read_sql_query(self.sqld.production_report(projectid)[1], cnxn)
+            productionReportDailyAVG = pd.read_sql_query(self.sqld.production_report(projectid)[2], cnxn)
+            cnxn.close()
+            del cnxn
+            return productionReport, productionReportDispo, productionReportDailyAVG
+        except Exception as err:
+            logger.critical(err)
+        return []
+

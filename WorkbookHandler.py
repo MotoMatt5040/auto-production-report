@@ -1,9 +1,10 @@
 import pandas as pd
+import numpy as np
 import os
 import shutil
 
 from typing import Union
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import xlwings as xw
 from configparser import ConfigParser
 
@@ -23,125 +24,180 @@ class WorkbookHandler():
         self._wb = None
         self._activeSheet = None
         self._activeSheetName = None
+        self._productionData = pd.DataFrame
 
-    def populateAll(self):
+    def populate_all(self):
         """
         Populates all fields in sheet
         :return: None
         """
-        self.populateProjectID()
-        self.populateProjectName(self._projectCode)  # this needs to be changed to E.g. (HEPA National (CRC))
-        self.populateDate()
-        self.populateDailyINC(0)  # get from sql qry
-        self.populateExpectedLOI()  # get from planner
-        self.populateAVGDailyLOI(0)   # get from sql qry
-        self.populateAVGOverallLOI(0)  # get from sql qry
+        self.populate_projectID()
+        self.populate_project_name()  # this needs to be changed to E.g. (HEPA National (CRC))
+        self.populate_date()
+        self.populate_daily_inc()  # get from sql qry
+        self.populate_expected_loi()  # get from planner
+        self.populate_avg_daily_loi()   # get from sql qry
+        self.populate_avg_overall_loi()  # get from sql qry
+        self.populate_avg_cph()
+        self.populate_avg_mph()
+        self.copy_rows()
 
-    def populateProjectID(self) -> None:
+    def populate_projectID(self) -> None:
         """
         Populates Project ID
         :param project: Project ID
         :return: None
         """
-        self._activeSheet.cell(row=1, column=1).value = self._projectCode
+        self._activeSheet.range('A1').options(index=False, header=False).value = self._projectCode
 
-    def populateProjectName(self, projectName: str) -> None:
+    def populate_project_name(self) -> None:
         """
         Populates project name
         :param projectName: Project name
         :return: None
         """
         # TODO run qry to pull project name
-        self._activeSheet.cell(row=1, column=2).value = projectName
+        self._activeSheet.range('B1').options(index=False, header=False).value = self._dispoData['projname']
 
-    def populateDate(self) -> None:
+    def populate_date(self) -> None:
         """
         Populates date
         :return: None
         """
-        self._activeSheet.cell(row=2, column=1).value = datetime.now().strftime("%B %d, %Y (%a)")
+        self._activeSheet.range('A2').options(index=False, header=False).value = datetime.now().strftime("%B %d, %Y (%a)")
 
-    def populateDailyINC(self, inc: float) -> None:
+    def populate_daily_inc(self) -> None:
         """
         Populates Daily Incidence
         :param inc: Daily incedence
         :return: None
         """
-        self._activeSheet.cell(row=2, column=18).value = inc
+        self._activeSheet.range('R2').options(index=False, header=False).value = self._dispoData['inc']/100
 
-    def populateAVGDailyLOI(self, loi) -> None:
+    def populate_avg_daily_loi(self) -> None:
         """
         Populates Avg. Daily LOI
         :param loi: AVG Daily LOI
         :return: None
         """
-        self._activeSheet.cell(row=3, column=18).value = loi
+        self._activeSheet.range('R3').options(index=False, header=False).value = self._dailyAVGData['avglen']
 
-    def populateAVGOverallLOI(self, loi) -> None:
+    def populate_avg_overall_loi(self) -> None:
         """
         Populates Avg. Overall LOI
         :param loi: AVG Overall LOI
         :return: None
         """
-        self._activeSheet.cell(row=4, column=18).value = loi
+        self._activeSheet.range('R4').options(index=False, header=False).value = self._dispoData['mean']
 
-    def copyRows(self, count) -> None:
+    def populate_avg_cph(self):
+        """
+        Populates Avg. CPH
+        :return: None
+        """
+        self._activeSheet.range('U3').options(index=False, header=False).value = self._dailyAVGData['avgcph']
+
+    def populate_avg_mph(self):
+        """
+        Populates Avg. MPH
+        :return: None
+        """
+        self._activeSheet.range('U4').options(index=False, header=False).value = self._dailyAVGData['avgmph']
+
+    def copy_rows(self) -> None:
         """
         Extends rows
         :param count: Number of rows to copy
         :return: None
         """
-        count += 7  # First row is 8, so we must add 7 to be inclusive
-        formula = self.getActiveSheet().range("G8").formula
-        self.getActiveSheet().range(f"G8:G{count}").formula = formula
+        count = self._productionReportData.shape[0] + 7
 
-        formula = self.getActiveSheet().range("I8").formula
-        self.getActiveSheet().range(f"I8:I{count}").formula = formula
+        self._activeSheet.range(f'A8:A{count}')\
+            .options(index=False, header=False).value = self._productionReportData['eid']
 
-        formula = self.getActiveSheet().range("J8").formula
-        self.getActiveSheet().range(f"J8:J{count}").formula = formula
+        self._activeSheet.range(f'B8:B{count}') \
+            .options(index=False, header=False).value = self._productionReportData['refname']
 
-        formula = self.getActiveSheet().range("K8").formula
-        self.getActiveSheet().range(f"K8:K{count}").formula = formula
+        self._activeSheet.range(f'C8:C{count}') \
+            .options(index=False, header=False).value = self._productionReportData['recloc']
 
-        formula = self.getActiveSheet().range("M8").formula
-        self.getActiveSheet().range(f"M8:M{count}").formula = formula
+        self._activeSheet.range(f'D8:D{count}') \
+            .options(index=False, header=False).value = self._productionReportData['tenure']
 
-        formula = self.getActiveSheet().range("N8").formula
-        self.getActiveSheet().range(f"N8:N{count}").formula = formula
+        self._activeSheet.range(f'E8:E{count}') \
+            .options(index=False, header=False).value = self._productionReportData['hrs']
 
-        formula = self.getActiveSheet().range("O8").formula
-        self.getActiveSheet().range(f"O8:O{count}").formula = formula
+        self._activeSheet.range(f'F8:F{count}') \
+            .options(index=False, header=False).value = self._productionReportData['connecttime']
 
-        formula = self.getActiveSheet().range("P8").formula
-        self.getActiveSheet().range(f"P8:P{count}").formula = formula
+        self._activeSheet.range(f'H8:H{count}') \
+            .options(index=False, header=False).value = self._productionReportData['pausetime']
 
-        formula = self.getActiveSheet().range("R8").formula
-        self.getActiveSheet().range(f"R8:R{count}").formula = formula
+        self._activeSheet.range(f'L8:L{count}') \
+            .options(index=False, header=False).value = self._productionReportData['cms']
 
-        formula = self.getActiveSheet().range("V8").formula
-        self.getActiveSheet().range(f"V8:V{count}").formula = formula
+        self._activeSheet.range(f'Q8:Q{count}') \
+            .options(index=False, header=False).value = self._productionReportData['intal']
 
-    def populateExpectedLOI(self, projectid: Union[int, str] = '') -> str:
+        self._activeSheet.range(f'S8:S{count}') \
+            .options(index=False, header=False).value = self._productionReportData['mph']
+
+        self._activeSheet.range(f'T8:T{count}') \
+            .options(index=False, header=False).value = self._productionReportData['totaldials']
+
+        formula = self._activeSheet.range("G8").formula
+        self._activeSheet.range(f"G8:G{count}").formula = formula
+
+        formula = self._activeSheet.range("I8").formula
+        self._activeSheet.range(f"I8:I{count}").formula = formula
+
+        formula = self._activeSheet.range("J8").formula
+        self._activeSheet.range(f"J8:J{count}").formula = formula
+
+        formula = self._activeSheet.range("K8").formula
+        self._activeSheet.range(f"K8:K{count}").formula = formula
+
+        formula = self._activeSheet.range("M8").formula
+        self._activeSheet.range(f"M8:M{count}").formula = formula
+
+        formula = self._activeSheet.range("N8").formula
+        self._activeSheet.range(f"N8:N{count}").formula = formula
+
+        formula = self._activeSheet.range("O8").formula
+        self._activeSheet.range(f"O8:O{count}").formula = formula
+
+        formula = self._activeSheet.range("P8").formula
+        self._activeSheet.range(f"P8:P{count}").formula = formula
+
+        formula = self._activeSheet.range("R8").formula
+        self._activeSheet.range(f"R8:R{count}").formula = formula
+
+        formula = self._activeSheet.range("U8").formula
+        self._activeSheet.range(f"U8:U{count}").formula = formula
+
+        formula = self._activeSheet.range("V8").formula
+        self._activeSheet.range(f"V8:V{count}").formula = formula
+
+    def populate_expected_loi(self):
         """
-        Pulls Expected LOI from 2020PLANNER and populates the production report cell
+        Pulls Expected LOI from <YEAR>PLANNER and populates the production report cell
         :return: None
         """
-        projectid = '12527C'
-        if self._activeSheet['R1'].value is None:
+        if self._activeSheet.range('R1').value is None:
             try:
-                df = pd.read_excel(f"{file_paths['PLANNER']}{date.today().strftime('%Y')}PLANNER.xls")
-                if type(projectid) == int:
-                    df = df.query(f"`Unnamed: 1` == {projectid}")
-                else:
-                    df = df.query(f"`Unnamed: 1` == '{projectid}'")
+                df = pd.read_excel(f"{file_paths['PLANNER']}{(date.today() - timedelta(1)).strftime('%Y')}PLANNER.xls")
+                try:
+                    df = df.query(f"`Unnamed: 1` == {int(self.get_project_code())}")
+                except Exception as err:
+                    df = df.query(f"`Unnamed: 1` == '{self.get_project_code()}'")
                 df = df.dropna(axis=1, how='all')
                 expectedLOI = df.iloc[0]['Unnamed: 16']
+                self._activeSheet.range('R1').value = expectedLOI
             except Exception as err:
                 print(err)
-                self._activeSheet['B1'].value = 'ERROR IN READING PLANNER'
+                self._activeSheet.range('R1').value = 'ERROR IN READING PLANNER'
 
-    def copySheet(self) -> None:
+    def copy_sheet(self) -> None:
         """
         Copies sheet
         :return: None
@@ -163,29 +219,29 @@ class WorkbookHandler():
             )
         del copySheet
 
-    def checkPath(self):
+    def check_path(self):
         if not os.path.exists(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/"):
             src = f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm"
             os.mkdir(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/")
-            dst = self.getPath()
+            dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
-        elif not os.path.exists(self.getPath()):
+        elif not os.path.exists(self.get_path()):
             src = f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm"
-            dst = self.getPath()
+            dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
         else:
             return
 
-    def createSheetName(self):
+    def create_sheet_name(self):
         """
         Creates sheet Name
         :return: None
         """
-        return f"{self.getProjectCode()} {date.today().strftime('%m%d')}"
+        return f"{self.get_project_code()} {(date.today() - timedelta(1)).strftime('%m%d')}"
 
-    def setProjectID(self, projectid: Union[int, str]) -> None:
+    def set_project_id(self, projectid: Union[int, str]) -> None:
         """
         Sets project ID
         :param projectid: Int or String of Project ID
@@ -196,7 +252,7 @@ class WorkbookHandler():
         else:
             self._projectid = projectid
 
-    def setProjectCode(self, projectCode) -> None:
+    def set_project_code(self, projectCode) -> None:
         """
         Sets Project Code
 
@@ -210,7 +266,7 @@ class WorkbookHandler():
         else:
             self._projectCode = projectCode
 
-    def setPath(self, path: str = None) -> None:
+    def set_path(self, path: str = None) -> None:
         """
         Sets path
         :param path: Filepath
@@ -221,20 +277,20 @@ class WorkbookHandler():
         self._path = path
 
 
-    def setWorkbook(self, path: str = None) -> None:
+    def set_workbook(self, path: str = None) -> None:
         """
         Sets workbook
         :param path: Filepath
         :return: None
         """
         if path is None:
-            path = self.getPath()
+            path = self.get_path()
         self.app = xw.App(visible=True)
         self._path = path
         self._wb = self.app.books.open(self._path)
         # self._wb = load_workbook(path)
 
-    def setActiveSheet(self, activeSheet: Union[int, str] = None) -> None:
+    def set_active_sheet(self, activeSheet: Union[int, str] = None) -> None:
         """
         Sets active sheet
         :param activeSheet: Sheet Name
@@ -244,10 +300,11 @@ class WorkbookHandler():
         # if not activeSheet:
         #     self._activeSheet = self._wb.sheets[f"{}"]
         if activeSheet is None:
-            activeSheet = f"{self.getActiveSheetName()}"
-        self._wb.active = self.getWorkbook().sheets[activeSheet]
+            activeSheet = f"{self.get_active_sheet_name()}"
+        self._activeSheet = self.get_workbook().sheets[activeSheet]
+        self._wb.active = self._activeSheet
 
-    def setActiveSheetName(self, sheetName: str = None) -> None:
+    def set_active_sheet_name(self, sheetName: str = None) -> None:
         """
         Sets active sheet Name
         :param sheetName: Sheet Name
@@ -256,10 +313,26 @@ class WorkbookHandler():
         print(self._projectCode)
         if sheetName is None:
             sheetName = self._projectCode
-        self._activeSheetName = f"{sheetName} {date.today().strftime('%m%d')}"
+        self._activeSheetName = f"{sheetName} {(date.today() - timedelta(1)).strftime('%m%d')}"
         self._wb.active.name = self._activeSheetName
 
-    def getWorkbook(self):
+    def set_data(self, data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
+        """
+        Sets Production Data
+        :param data: Pandas Dataframe
+        :return: None
+        """
+        productionReportData = data[0]
+        productionReportData['intal'] = np.where(productionReportData['cms'] > 0, productionReportData['intal'], np.nan)
+        dispoData = data[1]
+        dailyAVGData = data[2]
+        
+        self._productionReportData = productionReportData
+        self._dispoData = dispoData
+        self._dailyAVGData = dailyAVGData
+        self._data = data
+
+    def get_workbook(self):
         """
         Gets workbook
         :return: Active Workbook
@@ -268,25 +341,25 @@ class WorkbookHandler():
             return 'No active workbook'
         return self._wb
 
-    def getActiveSheet(self):
+    def get_active_sheet(self):
         """
         Gets active sheet
         :return: Active Sheet
         """
-        if self._wb.active is None:
+        if self._activeSheet is None:
             return 'No active sheet'
-        return self._wb.active
+        return self._activeSheet
 
-    def getActiveSheetName(self):
+    def get_active_sheet_name(self):
         """
         Gets active sheet Name
         :return: Active Sheet Name
         """
-        if self.getActiveSheet().name is None:
+        if self.get_active_sheet().name is None:
             return 'No active sheet Name'
-        return self.getActiveSheet().name
+        return self.get_active_sheet().name
 
-    def getProjectID(self) -> str:
+    def get_project_id(self) -> str:
         """
         Gets project ID
         :return: Project ID
@@ -295,7 +368,7 @@ class WorkbookHandler():
             return 'No project ID'
         return self._projectid
 
-    def getProjectCode(self) -> str:
+    def get_project_code(self) -> str:
         """
         Gets project Code
         :return: Project Code
@@ -304,7 +377,7 @@ class WorkbookHandler():
             return 'No project Code'
         return self._projectCode
 
-    def getPath(self) -> str:
+    def get_path(self) -> str:
         """
         Gets path
         :return: Path
@@ -312,6 +385,34 @@ class WorkbookHandler():
         if self._path is None:
             return 'No path'
         return self._path
+
+    def get_production_data(self) -> pd.DataFrame:
+        """
+        Gets Production Data
+        :return: Pandas Dataframe
+        """
+        return self._productionReportData
+
+    def get_dispo_data(self) -> pd.DataFrame:
+        """
+        Gets Dispo Data
+        :return: Pandas Dataframe
+        """
+        return self._dispoData
+
+    def get_daily_avg_data(self) -> pd.DataFrame:
+        """
+        Gets Daily Avg Data
+        :return: Pandas Dataframe
+        """
+        return self._dailyAVGData
+
+    def get_data(self) -> pd.DataFrame:
+        """
+        Gets Production Data
+        :return: Pandas Dataframe
+        """
+        return self._data
 
     def save(self) -> None:
         """

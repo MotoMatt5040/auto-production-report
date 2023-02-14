@@ -47,15 +47,3 @@ class SQLDictionary:
         productionReportAVGLength = f"{qry['ProductionReportAVGLength']}{projectid}{qry['ProductionReportAVGLengthAnd']}{date.today() - timedelta(1)}'"
 
         return productionReport, productionReportDispo, productionReportAVGLength
-
-        #THIS IS ALL STUFF ON TOP
-        #df of 2020 planner, exp l where projectid ==
-        #daily inc and avg daily and overall avg, day in review
-        #avg mph avg cph, prod2020
-
-        #int data from prod2020
-
-
-
-
-

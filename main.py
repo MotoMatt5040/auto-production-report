@@ -15,45 +15,24 @@ wh = WorkbookHandler.WorkbookHandler()
 
 def read_excel():
     wh.set_workbook()
+    wh.copy_sheet()
     try:
         if wh.get_project_code().upper()[-1] == "C":
-            wh.set_active_sheet("PROJ#C DATE")
-            print('cell')
+            wh.set_active_sheet("PROJ#C DATE (2)")
         else:
-            wh.set_active_sheet("PROJ# DATE")
-            print('ll')
+            wh.set_active_sheet("PROJ# DATE (2)")
     except Exception as err:
         print(err)
-        wh.copy_sheet()
-        if wh.get_project_code().upper()[-1] == "C":
-            wh.set_active_sheet("PROJ#C DATE")
-            print('cell')
-        else:
-            wh.set_active_sheet("PROJ# DATE")
-            print('ll')
-    print(wh.get_active_sheet_name())
-    wh.set_active_sheet_name(f"{wh.get_project_code()}")
+    wh.set_active_sheet_name()
     wh.populate_expected_loi()
-    print(wh.get_active_sheet())
     wh.set_data(dpull.production_report(wh.get_project_code()))
     wh.populate_all()
-    # wh.populate_production_data()
-    # print(dpull.production_report(wh.get_project_code())[0].to_string())
-    # print(dpull.production_report(wh.get_project_code())[1].to_string())
-    # print(dpull.production_report(wh.get_project_code())[2].to_string())
     wh.save()
     wh.close()
 
 
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
-
-
-# activeDict = {'12523': '12523',
-#                '12523C': '12523'
-#                }
-
-# TODO Make sure wh.expectedloi works properly
 
 
 prev = None
@@ -67,14 +46,10 @@ for key in activeDict:
     elif prev == activeDict[key]:
         pass
     prev = activeDict[key]
-    # print(dpull.productionReport(wh.getProjectCode()).to_string())
     read_excel()
 
 
-
-print(activeDict)
-active_id_list_details = list(active_id_df['projectid'])
-active_id_list = [projectid[:5] for projectid in active_id_list_details]
+wh.app_quit()
 
 
 if __name__ == '__main__':

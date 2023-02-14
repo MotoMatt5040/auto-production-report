@@ -8,14 +8,14 @@ from datetime import date, datetime, timedelta
 import xlwings as xw
 from configparser import ConfigParser
 
-
 config_object = ConfigParser()
 config_object.read('config.ini')
 file_paths = config_object['FILE PATHS']
 del config_object
 
-class WorkbookHandler():
 
+class WorkbookHandler():
+    app = xw.App(visible=True)
 
     def __init__(self):
         self._projectid = None
@@ -36,7 +36,7 @@ class WorkbookHandler():
         self.populate_date()
         self.populate_daily_inc()  # get from sql qry
         self.populate_expected_loi()  # get from planner
-        self.populate_avg_daily_loi()   # get from sql qry
+        self.populate_avg_daily_loi()  # get from sql qry
         self.populate_avg_overall_loi()  # get from sql qry
         self.populate_avg_cph()
         self.populate_avg_mph()
@@ -64,7 +64,8 @@ class WorkbookHandler():
         Populates date
         :return: None
         """
-        self._activeSheet.range('A2').options(index=False, header=False).value = datetime.now().strftime("%B %d, %Y (%a)")
+        self._activeSheet.range('A2').options(index=False, header=False).value = (datetime.now() - timedelta(1)).strftime(
+            "%B %d, %Y (%a)")
 
     def populate_daily_inc(self) -> None:
         """
@@ -72,7 +73,7 @@ class WorkbookHandler():
         :param inc: Daily incedence
         :return: None
         """
-        self._activeSheet.range('R2').options(index=False, header=False).value = self._dispoData['inc']/100
+        self._activeSheet.range('R2').options(index=False, header=False).value = self._dispoData['inc'] / 100
 
     def populate_avg_daily_loi(self) -> None:
         """
@@ -112,7 +113,7 @@ class WorkbookHandler():
         """
         count = self._productionReportData.shape[0] + 7
 
-        self._activeSheet.range(f'A8:A{count}')\
+        self._activeSheet.range(f'A8:A{count}') \
             .options(index=False, header=False).value = self._productionReportData['eid']
 
         self._activeSheet.range(f'B8:B{count}') \
@@ -194,7 +195,6 @@ class WorkbookHandler():
                 expectedLOI = df.iloc[0]['Unnamed: 16']
                 self._activeSheet.range('R1').value = expectedLOI
             except Exception as err:
-                print(err)
                 self._activeSheet.range('R1').value = 'ERROR IN READING PLANNER'
 
     def copy_sheet(self) -> None:
@@ -202,22 +202,41 @@ class WorkbookHandler():
         Copies sheet
         :return: None
         """
-        copySheet = self._wb.macro(f"Module1.copySheet") # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
+        # self.save()
+        # self.close()
+        # self.app.quit()
+        # self.set_app()
+        # self.app.books.open(f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm")
+        copySheet = self._wb.macro(
+            f"Module1.copySheetTEST")  # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
+
         if self._projectCode[-1].upper() == "C":
+            # copySheet(
+            #     f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
+            #     f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
+            #     self._projectid,
+            #     2
+            # )
             copySheet(
-                f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
-                f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
-                self._projectid,
                 2
             )
+            pass
         else:
             copySheet(
-                f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
-                f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
-                self._projectid,
                 1
             )
+            # self.close()
+            # copySheet(
+            #     f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
+            #     f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
+            #     self._projectid,
+            #     1
+            # )
+            pass
         del copySheet
+        # self.app.quit()
+        # self.set_app()
+        # self.set_workbook()
 
     def check_path(self):
         if not os.path.exists(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/"):
@@ -240,6 +259,9 @@ class WorkbookHandler():
         :return: None
         """
         return f"{self.get_project_code()} {(date.today() - timedelta(1)).strftime('%m%d')}"
+
+    def set_app(self):
+        self.app = xw.App(visible= True)
 
     def set_project_id(self, projectid: Union[int, str]) -> None:
         """
@@ -276,7 +298,6 @@ class WorkbookHandler():
             path = f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm"
         self._path = path
 
-
     def set_workbook(self, path: str = None) -> None:
         """
         Sets workbook
@@ -285,7 +306,7 @@ class WorkbookHandler():
         """
         if path is None:
             path = self.get_path()
-        self.app = xw.App(visible=True)
+
         self._path = path
         self._wb = self.app.books.open(self._path)
         # self._wb = load_workbook(path)
@@ -296,9 +317,6 @@ class WorkbookHandler():
         :param activeSheet: Sheet Name
         :return: None
         """
-        # print(f"active Sheet: -{activeSheet}-")
-        # if not activeSheet:
-        #     self._activeSheet = self._wb.sheets[f"{}"]
         if activeSheet is None:
             activeSheet = f"{self.get_active_sheet_name()}"
         self._activeSheet = self.get_workbook().sheets[activeSheet]
@@ -310,7 +328,6 @@ class WorkbookHandler():
         :param sheetName: Sheet Name
         :return: sheetName String
         """
-        print(self._projectCode)
         if sheetName is None:
             sheetName = self._projectCode
         self._activeSheetName = f"{sheetName} {(date.today() - timedelta(1)).strftime('%m%d')}"
@@ -324,9 +341,10 @@ class WorkbookHandler():
         """
         productionReportData = data[0]
         productionReportData['intal'] = np.where(productionReportData['cms'] > 0, productionReportData['intal'], np.nan)
+        productionReportData['mph'].where(productionReportData['mph'] != 0.00, np.nan, inplace=True)
         dispoData = data[1]
         dailyAVGData = data[2]
-        
+
         self._productionReportData = productionReportData
         self._dispoData = dispoData
         self._dailyAVGData = dailyAVGData
@@ -424,4 +442,7 @@ class WorkbookHandler():
 
     def close(self) -> None:
         self._wb.close()
-        self.app.kill()
+        # self.app.close()
+
+    def app_quit(self) -> None:
+        self.app.quit()

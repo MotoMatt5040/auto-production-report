@@ -202,41 +202,14 @@ class WorkbookHandler():
         Copies sheet
         :return: None
         """
-        # self.save()
-        # self.close()
-        # self.app.quit()
-        # self.set_app()
-        # self.app.books.open(f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm")
         copySheet = self._wb.macro(
             f"Module1.copySheetTEST")  # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
 
         if self._projectCode[-1].upper() == "C":
-            # copySheet(
-            #     f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
-            #     f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
-            #     self._projectid,
-            #     2
-            # )
-            copySheet(
-                2
-            )
-            pass
+            copySheet(2)
         else:
-            copySheet(
-                1
-            )
-            # self.close()
-            # copySheet(
-            #     f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm",
-            #     f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm",
-            #     self._projectid,
-            #     1
-            # )
-            pass
+            copySheet(1)
         del copySheet
-        # self.app.quit()
-        # self.set_app()
-        # self.set_workbook()
 
     def check_path(self):
         if not os.path.exists(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/"):

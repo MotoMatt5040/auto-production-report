@@ -3,17 +3,14 @@ import webbrowser
 from configparser import ConfigParser
 import shutil
 
-config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini"
+config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/"
 if not os.path.exists(config_path):
-    os.mkdir(f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/")
-    shutil.copyfile(f'C:/Users/{os.getlogin()}/Downloads/config.ini', config_path)
-
-import DataPuller
-import WorkbookHandler
-
+    os.mkdir(config_path)
+if not os.path.exists(f"{config_path}config.ini"):
+    shutil.copyfile(f'C:/Users/{os.getlogin()}/Downloads/config.ini', f"{config_path}config.ini")
 
 config_object = ConfigParser()
-config_object.read(config_path)
+config_object.read(f"{config_path}config.ini")
 file_paths = config_object['FILE PATHS']
 check_odbc = config_object['ODBC INSTALLED']
 
@@ -30,7 +27,7 @@ if check_odbc['check odbc'] == '0':
             print('Invalid input.')
         elif option.lower() == 'y':
             config_object.set('ODBC INSTALLED', 'check odbc', '1')
-            with open(config_path, 'w') as configfile:
+            with open(f"{config_path}config.ini", 'w') as configfile:
                 config_object.write(configfile)
             verify = True
         elif option.lower() == 'n':
@@ -41,11 +38,13 @@ if check_odbc['check odbc'] == '0':
                 "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
             input('Press enter to continue once ODBC Driver 17 is finished installing...')
             config_object.set('ODBC INSTALLED', 'check odbc', '1')
-            with open(config_path, 'w') as configfile:
+            with open(f"{config_path}config.ini", 'w') as configfile:
                 config_object.write(configfile)
             verify = True
 del config_object
 
+import DataPuller
+import WorkbookHandler
 
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
@@ -72,7 +71,6 @@ def read_excel():
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
 
-
 prev = None
 for key in activeDict:
     projectNumber = key[:5]
@@ -86,14 +84,7 @@ for key in activeDict:
     prev = activeDict[key]
     read_excel()
 
-
 wh.app_quit()
 
 if __name__ == '__main__':
     print()
-
-
-
-
-
-

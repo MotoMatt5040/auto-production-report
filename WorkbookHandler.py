@@ -188,7 +188,7 @@ class WorkbookHandler():
         """
         if self._activeSheet.range('R1').value is None:
             try:
-                df = pd.read_excel(f"{file_paths['PLANNER']}{(date.today() - timedelta(1)).strftime('%Y')}PLANNER.xls")
+                df = pd.read_excel(f"{file_paths['planner']}{(date.today() - timedelta(1)).strftime('%Y')}PLANNER.xls")
                 try:
                     df = df.query(f"`Unnamed: 1` == {int(self.get_project_code())}")
                 except Exception as err:
@@ -214,14 +214,14 @@ class WorkbookHandler():
         del copySheet
 
     def check_path(self):
-        if not os.path.exists(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/"):
-            src = f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm"
-            os.mkdir(f"{file_paths['SRC']}{self._projectid}/PRODUCTION/")
+        if not os.path.exists(f"{file_paths['src']}{self._projectid}/PRODUCTION/"):
+            src = f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm"
+            os.mkdir(f"{file_paths['src']}{self._projectid}/PRODUCTION/")
             dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
         elif not os.path.exists(self.get_path()):
-            src = f"{file_paths['SRC']}PRODUCTION/BLANK_Production.xlsm"
+            src = f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm"
             dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
@@ -270,7 +270,7 @@ class WorkbookHandler():
         :return: None
         """
         if path is None:
-            path = f"{file_paths['SRC']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm"
+            path = f"{file_paths['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm"
         self._path = path
 
     def set_workbook(self, path: str = None) -> None:
@@ -284,7 +284,6 @@ class WorkbookHandler():
 
         self._path = path
         self._wb = self.app.books.open(self._path)
-        # self._wb = load_workbook(path)
 
     def set_active_sheet(self, activeSheet: Union[int, str] = None) -> None:
         """

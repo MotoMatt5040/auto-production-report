@@ -3,34 +3,38 @@ Required setup in order for program to work properly:
     config.ini file with the following fields
 
         [FILE PATHS]
-        SRC = <path>
+        src = <path>
+        planner = <path>
 
         [DATABASE ACCESS INFO]
-        CORESERVER = <ip>
-        CC3SERVER = <ip>
-        ARCHIVECC3SERVER = <ip>
-        TFSERVER = <ip>
-        COREUSER = <username>
-        CC3USER = <username>
-        ARCHIVECC3USER = <username>
-        TFUSER = <username>
-        COREPASSWORD = <password>
-        CC3PASSWORD = <password>
-        ARCHIVECC3PASSWORD = <password>
-        TFPASSWORD = <password>
-        CALIGULA = <database>
+        coreserver = <ip>
+        cc3server = <ip>
+        archivecc3server = <ip>
+        tfserver = <ip>
+        coreuser = <username>
+        cc3user = <username>
+        archivecc3user = <username>
+        tfuser = <username>
+        corepassword = <password>
+        cc3password = <password>
+        archivecc3password = <password>
+        tfpassword = <password>
+        caligula = <database>
 
         [SQL CODE]
-        ActiveProjectIDs = <qry>
-        GPCPH = <qry>
-        ProductionReport = <qry>
-        ProductionAnd = <qry>
-        ProductionGroupBy = <qry>
-        ProductionReportDispo = <qry>
-        ProductionReportDispoAnd = <qry>
-        ProductionReportDispoSingle = <qry>
-        ProductionReportAVGLength = <qry>
-        ProductioNReportAVGLengthAnd = <qry>
+        activeprojectids = <qry>
+        gpcph = <qry>
+        productionreport = <qry>
+        productionand = <qry>
+        productiongroupby = <qry>
+        productionreportdispo = <qry>
+        productionreportdispoand = <qry>
+        productionreportdisposingle = <qry>
+        productionreportavglength = <qry>
+        productionreportavglengthand = <qry>
+
+        [ODBC INSTALLED]
+        check odbc = 0
 
     Adjust variables as needed.
 

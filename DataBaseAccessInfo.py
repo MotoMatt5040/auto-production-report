@@ -12,22 +12,22 @@ class DataBaseAccessInfo:
 
     info = config_object["DATABASE ACCESS INFO"]
 
-    CORESERVER = info["CORESERVER"]
-    CC3SERVER = info["CC3SERVER"]
-    ARCHIVECC3SERVER = info["ARCHIVECC3SERVER"]
-    TFSERVER = info["TFSERVER"]
+    CORESERVER = info["coreserver"]
+    CC3SERVER = info["cc3server"]
+    ARCHIVECC3SERVER = info["archivecc3server"]
+    TFSERVER = info["tfserver"]
 
-    COREUSER = info["COREUSER"]
-    CC3USER = info["CC3USER"]
-    ARCHIVECC3USER = info["ARCHIVECC3USER"]
-    TFUSER = info["TFUSER"]
+    COREUSER = info["coreuser"]
+    CC3USER = info["cc3user"]
+    ARCHIVECC3USER = info["archivecc3user"]
+    TFUSER = info["tfuser"]
 
-    COREPASSWORD = info["COREPASSWORD"]
-    CC3PASSWORD = info["CC3PASSWORD"]
-    ARCHIVECC3PASSWORD = info["ARCHIVECC3PASSWORD"]
-    TFPASSWORD = info["TFPASSWORD"]
+    COREPASSWORD = info["corepassword"]
+    CC3PASSWORD = info["cc3password"]
+    ARCHIVECC3PASSWORD = info["archivecc3password"]
+    TFPASSWORD = info["tfpassword"]
 
-    CALIGULA = info["CALIGULA"]
+    CALIGULA = info["caligula"]
     del config_object
 
     SERVERNAME = {

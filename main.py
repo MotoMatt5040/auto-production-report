@@ -68,8 +68,10 @@ def read_excel():
     wh.save()
     wh.close()
 
+
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
+
 
 prev = None
 for key in activeDict:

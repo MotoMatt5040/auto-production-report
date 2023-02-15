@@ -22,16 +22,16 @@ Required setup in order for program to work properly:
         caligula = <database>
 
         [SQL CODE]
-        activeprojectids = <qry>
+        active project ids = <qry>
         gpcph = <qry>
-        productionreport = <qry>
-        productionand = <qry>
-        productiongroupby = <qry>
-        productionreportdispo = <qry>
-        productionreportdispoand = <qry>
-        productionreportdisposingle = <qry>
-        productionreportavglength = <qry>
-        productionreportavglengthand = <qry>
+        production report = <qry>
+        production and = <qry>
+        production group by = <qry>
+        production report dispo = <qry>
+        production report dispo and = <qry>
+        production report dispo single = <qry>
+        production report avg length = <qry>
+        production report avg length and = <qry>
 
         [ODBC INSTALLED]
         check odbc = 0

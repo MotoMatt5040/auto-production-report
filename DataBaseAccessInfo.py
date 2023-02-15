@@ -1,23 +1,16 @@
-import logging
-from logging.handlers import RotatingFileHandler
-
 from configparser import ConfigParser
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s:%(name)s:%(funcName)s:%(levelname)s:%(message)s')
-file_handler = RotatingFileHandler('logs\DataBaseAccessInfo.log', mode='a', maxBytes=1024, backupCount=1)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.propagate = False
+import os
 
 
 class DataBaseAccessInfo:
+
     # region constants for server info
     config_object = ConfigParser()
-    config_object.read("config.ini")
+    config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini"
+    config_object.read(config_path)
 
-    info = config_object['DATABASE ACCESS INFO']
+
+    info = config_object["DATABASE ACCESS INFO"]
 
     CORESERVER = info["CORESERVER"]
     CC3SERVER = info["CC3SERVER"]
@@ -75,13 +68,12 @@ class DataBaseAccessInfo:
             self._userid = self.USERID[userid]
             self._password = self.PASSWORD[password]
         except Exception as err:
-            logger.critical(err)
+            print(err)
 
     def get_info(self):
         URI = '*****\nDriver: {}\nServer Address: {}\nDatabase Name: {}\nUserID: {}\nPassword: {}\n*****'.format(
             self._driver, self._servername, self._database, self._userid, self._password
         )
-        logger.info(URI)
         return URI
 
     def get_driver(self):

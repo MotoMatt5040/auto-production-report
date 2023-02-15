@@ -8,8 +8,10 @@ from datetime import date, datetime, timedelta
 import xlwings as xw
 from configparser import ConfigParser
 
+
 config_object = ConfigParser()
-config_object.read('config.ini')
+config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini"
+config_object.read(config_path)
 file_paths = config_object['FILE PATHS']
 del config_object
 
@@ -410,7 +412,6 @@ class WorkbookHandler():
         Saves workbook
         :return: None
         """
-        # TODO Replace with path instead of Name
         self._wb.save(f"{self._path}")
 
     def close(self) -> None:

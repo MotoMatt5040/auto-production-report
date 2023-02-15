@@ -1,18 +1,10 @@
-import logging
 import pandas as pd
 from sqlalchemy import create_engine
-from logging.handlers import RotatingFileHandler
-
+from sqlalchemy import text
+import webbrowser
+import pyodbc
 import DataBaseAccessInfo
 import SQLDictionary
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s:%(thread)d:%(threadName)s:%(name)s:%(funcName)s:%(levelname)s:%(message)s')
-file_handler = RotatingFileHandler('logs\DataPuller.log', mode='a', maxBytes=1024, backupCount=1)
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.propagate = False
 
 class DataPuller:
     sqld = SQLDictionary.SQLDictionary()
@@ -41,36 +33,60 @@ class DataPuller:
 
     def active_project_ids(self):
         try:
-            cnxn = self.engine.connect()
-            df = pd.read_sql_query(self.sqld.project_id_list(), cnxn)
+            try:
+                cnxn = self.engine.connect()
+            except Exception:
+                print("No ODBC Driver detected. Please install Microsoft ODBC Driver 17 for SQL Server from "
+                      "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
+                webbrowser.open(
+                    "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
+                input("Press Enter to continue...")
+            df = pd.read_sql_query(text(self.sqld.project_id_list()), cnxn)
             cnxn.close()
             del cnxn
             return df
         except Exception as err:
-            logger.critical(err)
+            print(err)
+            input("Press Enter to continue...")
         return []
 
     def gpcph(self):
         try:
-            cnxn = self.engine.connect()
-            df = pd.read_sql_query(self.sqld.gpcph(), cnxn)
+            try:
+                cnxn = self.engine.connect()
+            except Exception:
+                print("No ODBC Driver detected. Please install Microsoft ODBC Driver 17 for SQL Server from "
+                      "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
+                webbrowser.open(
+                    "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
+                input("Press Enter to continue...")
+            df = pd.read_sql_query(text(self.sqld.gpcph()), cnxn)
             cnxn.close()
             del cnxn
             return df
         except Exception as err:
-            logger.critical(err)
+            print(err)
+            input("Press Enter to continue...")
         return []
 
     def production_report(self, projectid) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         try:
-            cnxn = self.engine.connect()
-            productionReport = pd.read_sql_query(self.sqld.production_report(projectid)[0], cnxn)
-            productionReportDispo = pd.read_sql_query(self.sqld.production_report(projectid)[1], cnxn)
-            productionReportDailyAVG = pd.read_sql_query(self.sqld.production_report(projectid)[2], cnxn)
+            try:
+                cnxn = self.engine.connect()
+            except Exception:
+                print("No ODBC Driver detected. Please install Microsoft ODBC Driver 17 for SQL Server from "
+                      "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
+                webbrowser.open(
+                    "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
+                input("Press Enter to continue...")
+            productionReport = pd.read_sql_query(text(self.sqld.production_report(projectid)[0]), cnxn)
+            productionReportDispo = pd.read_sql_query(text(self.sqld.production_report(projectid)[1]), cnxn)
+            productionReportDailyAVG = pd.read_sql_query(text(self.sqld.production_report(projectid)[2]), cnxn)
             cnxn.close()
             del cnxn
             return productionReport, productionReportDispo, productionReportDailyAVG
         except Exception as err:
-            logger.critical(err)
+            print(err)
+            input("Press Enter to continue...")
         return []
 

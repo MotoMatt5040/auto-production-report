@@ -1,10 +1,19 @@
+import os
+
+from configparser import ConfigParser
+import shutil
+
+config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini"
+if not os.path.exists(config_path):
+    os.mkdir(f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/")
+    shutil.copyfile(f'C:/Users/{os.getlogin()}/Downloads/config.ini', config_path)
+
 import DataPuller
 import WorkbookHandler
-from configparser import ConfigParser
 
 
 config_object = ConfigParser()
-config_object.read("config.ini")
+config_object.read(config_path)
 file_paths = config_object['FILE PATHS']
 del config_object
 
@@ -30,10 +39,8 @@ def read_excel():
     wh.save()
     wh.close()
 
-
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
-
 
 prev = None
 for key in activeDict:
@@ -51,7 +58,11 @@ for key in activeDict:
 
 wh.app_quit()
 
-
 if __name__ == '__main__':
     print()
+
+
+
+
+
 

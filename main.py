@@ -47,7 +47,6 @@ if check_odbc['check odbc'] == '0':
 del config_object
 
 
-
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
 

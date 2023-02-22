@@ -270,7 +270,7 @@ class WorkbookHandler():
         :return: None
         """
         if path is None:
-            path = f"{file_paths['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_ReportTEST.xlsm"
+            path = f"{file_paths['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm"
         self._path = path
 
     def set_workbook(self, path: str = None) -> None:

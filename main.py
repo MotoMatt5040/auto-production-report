@@ -76,7 +76,7 @@ for key in activeDict:
     projectNumber = key[:5]
     wh.set_project_id(projectNumber)
     wh.set_project_code(key)
-    wh.set_path(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_ReportTEST.xlsm")
+    wh.set_path(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
     if prev is None or prev != activeDict[key]:
         wh.check_path()
     elif prev == activeDict[key]:

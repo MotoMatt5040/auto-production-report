@@ -27,6 +27,7 @@ class WorkbookHandler():
         self._activeSheet = None
         self._activeSheetName = None
         self._productionData = pd.DataFrame
+        self._date = date.today() - timedelta(1)
 
     def populate_all(self):
         """
@@ -66,7 +67,7 @@ class WorkbookHandler():
         Populates date
         :return: None
         """
-        self._activeSheet.range('A2').options(index=False, header=False).value = (datetime.now() - timedelta(1)).strftime(
+        self._activeSheet.range('A2').options(index=False, header=False).value = self._date.strftime(
             "%B %d, %Y (%a)")
 
     def populate_daily_inc(self) -> None:
@@ -114,7 +115,7 @@ class WorkbookHandler():
         :return: None
         """
         count = self._productionReportData.shape[0] + 7
-
+        print("count:", count)
         self._activeSheet.range(f'A8:A{count}') \
             .options(index=False, header=False).value = self._productionReportData['eid']
 
@@ -188,7 +189,7 @@ class WorkbookHandler():
         """
         if self._activeSheet.range('R1').value is None:
             try:
-                df = pd.read_excel(f"{file_paths['planner']}{(date.today() - timedelta(1)).strftime('%Y')}PLANNER.xls")
+                df = pd.read_excel(f"{file_paths['planner']}{self._date.strftime('%Y')}PLANNER.xls")
                 try:
                     df = df.query(f"`Unnamed: 1` == {int(self.get_project_code())}")
                 except Exception as err:
@@ -233,7 +234,7 @@ class WorkbookHandler():
         Creates sheet Name
         :return: None
         """
-        return f"{self.get_project_code()} {(date.today() - timedelta(1)).strftime('%m%d')}"
+        return f"{self.get_project_code()} {self._date.strftime('%m%d')}"
 
     def set_app(self):
         self.app = xw.App(visible= True)
@@ -304,7 +305,7 @@ class WorkbookHandler():
         """
         if sheetName is None:
             sheetName = self._projectCode
-        self._activeSheetName = f"{sheetName} {(date.today() - timedelta(1)).strftime('%m%d')}"
+        self._activeSheetName = f"{sheetName} {self._date.strftime('%m%d')}"
         self._wb.active.name = self._activeSheetName
 
     def set_data(self, data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
@@ -323,6 +324,9 @@ class WorkbookHandler():
         self._dispoData = dispoData
         self._dailyAVGData = dailyAVGData
         self._data = data
+
+    def set_date(self, date_):
+        self._date = date_
 
     def get_workbook(self):
         """
@@ -405,6 +409,13 @@ class WorkbookHandler():
         :return: Pandas Dataframe
         """
         return self._data
+
+    def get_date(self):
+        """
+        Gets date
+        :return: date
+        """
+        return self._date
 
     def save(self) -> None:
         """

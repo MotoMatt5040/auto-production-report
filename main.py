@@ -51,7 +51,7 @@ wh = WorkbookHandler.WorkbookHandler()
 
 
 def read_excel():
-    wh.set_workbook()
+
     wh.copy_sheet()
     try:
         if wh.get_project_code().upper()[-1] == "C":
@@ -62,27 +62,37 @@ def read_excel():
         print(err)
     wh.set_active_sheet_name()
     wh.populate_expected_loi()
-    wh.set_data(dpull.production_report(wh.get_project_code()))
+    wh.set_data(dpull.production_report(wh.get_project_code(), wh.get_date()))
     wh.populate_all()
-    wh.save()
-    wh.close()
 
 
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
 
+
 prev = None
-for key in activeDict:
-    projectNumber = key[:5]
-    wh.set_project_id(projectNumber)
-    wh.set_project_code(key)
-    wh.set_path(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
-    if prev is None or prev != activeDict[key]:
+loc = 0
+for project in active_id_df['projectid']:
+    projectNumber = project[:5]
+
+    if prev is None or prev != projectNumber or prev != project:
+        wh.set_project_id(projectNumber)
+        wh.set_project_code(project)
+        wh.set_path(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
+
+    if prev is None or prev != projectNumber:
         wh.check_path()
-    elif prev == activeDict[key]:
-        pass
-    prev = activeDict[key]
+        wh.set_workbook()
+    prev = projectNumber
+
+    wh.set_date(active_id_df['recdate'][loc])
     read_excel()
+
+    if loc >= len(active_id_df['projectid']) - 1 or projectNumber != active_id_df['projectid'][loc+1][:5]:
+        wh.save()
+        wh.close()
+    loc += 1
+
 
 wh.app_quit()
 

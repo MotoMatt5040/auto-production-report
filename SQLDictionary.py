@@ -17,24 +17,20 @@ class SQLDictionary:
         Builds active project ID's string for previous day
         :return: String of project ID qry
         """
-        projectids = f"{qry['active project ids']} '{str(date.today() - timedelta(1))}'"
+        if date.today().weekday() == 0:
+            time_delta = 3
+        else:
+            time_delta = 1
+        projectids = f"{qry['active project ids']} '{date.today() - timedelta(time_delta)}'"
         return projectids
 
-    def gpcph(self) -> str:
-        """
-        Builds GPCPH string for previous day
-        :return: String of GPCPH qry
-        """
-        gpcph = f"{qry['gpcph']} '{str(date.today() - timedelta(1))}'"
-        return gpcph
-
-    def production_report(self, projectid) -> tuple[str, str, str]:
+    def production_report(self, projectid, date_) -> tuple[str, str, str]:
         """
         Builds production report string for previous day
         :return: String of production report qry
         """
-        productionReport = f"{qry['production report']}{projectid}{qry['production and']}{date.today() - timedelta(1)}{qry['production group by']}"
-        productionReportDispo = f"{qry['production report dispo']}{projectid}{qry['production report dispo and']}{date.today() - timedelta(1)}{qry['production report dispo single']}"
-        productionReportAVGLength = f"{qry['production report avg length']}{projectid}{qry['production report avg length and']}{date.today() - timedelta(1)}'"
+        productionReport = f"{qry['production report']}{projectid}{qry['production and']}{date_}{qry['production group by']}"
+        productionReportDispo = f"{qry['production report dispo']}{projectid}{qry['production report dispo and']}{date_}{qry['production report dispo single']}"
+        productionReportAVGLength = f"{qry['production report avg length']}{projectid}{qry['production report avg length and']}{date_}'"
 
         return productionReport, productionReportDispo, productionReportAVGLength

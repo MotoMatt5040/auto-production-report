@@ -1,5 +1,8 @@
 import os
+import traceback
 import webbrowser
+import pandas as pd
+from datetime import datetime
 from configparser import ConfigParser
 import shutil
 
@@ -66,35 +69,69 @@ def read_excel():
     wh.populate_all()
 
 
+# TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
+# print(active_id_df)
+# quit()
+#
+# print(active_id_df.to_string())
+# print(activeDict)
+# quit()
+
+# print(active_id_df.to_string())
+# print(activeDict)
+# TODO REMOVE BELOW, this was a 1 off for a specific project
+# date_list = [
+#     datetime.strptime('2023-07-21', '%Y-%m-%d'),
+#     datetime.strptime('2023-07-22', '%Y-%m-%d'),
+#     datetime.strptime('2023-07-21', '%Y-%m-%d'),
+#     datetime.strptime('2023-07-22', '%Y-%m-%d'),
+# ]
+#
+# active_id = {
+#     'projectid': ['12644', '12644', '12644C', '12644C'],
+#     'recdate': date_list
+# }
+# active_id_df = pd.DataFrame(active_id)
+# activeDict = dict.fromkeys(active_id_df['projectid'])
+#
+# print(active_id_df.to_string())
+# print(activeDict)
+# quit()
+#
+# # 20210809	20210815
+
+try:
+
+    prev = None
+    loc = 0
+    for project in active_id_df['projectid']:
+        projectNumber = project[:5]
+
+        if prev is None or prev != projectNumber or prev != project:
+            wh.set_project_id(projectNumber)
+            wh.set_project_code(project)
+            wh.set_path(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
+
+        if prev is None or prev != projectNumber:
+            wh.check_path()
+            wh.set_workbook()
+        prev = projectNumber
+
+        wh.set_date(active_id_df['recdate'][loc])
+        read_excel()
+
+        if loc >= len(active_id_df['projectid']) - 1 or projectNumber != active_id_df['projectid'][loc+1][:5]:
+            wh.save()
+            wh.close()
+        loc += 1
 
 
-prev = None
-loc = 0
-for project in active_id_df['projectid']:
-    projectNumber = project[:5]
-
-    if prev is None or prev != projectNumber or prev != project:
-        wh.set_project_id(projectNumber)
-        wh.set_project_code(project)
-        wh.set_path(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
-
-    if prev is None or prev != projectNumber:
-        wh.check_path()
-        wh.set_workbook()
-    prev = projectNumber
-
-    wh.set_date(active_id_df['recdate'][loc])
-    read_excel()
-
-    if loc >= len(active_id_df['projectid']) - 1 or projectNumber != active_id_df['projectid'][loc+1][:5]:
-        wh.save()
-        wh.close()
-    loc += 1
-
-
-wh.app_quit()
+    wh.app_quit()
+except:
+    print(traceback.format_exc())
+    input("Press enter to continue")
 
 if __name__ == '__main__':
     print()

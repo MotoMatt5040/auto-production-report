@@ -115,7 +115,6 @@ class WorkbookHandler():
         :return: None
         """
         count = self._productionReportData.shape[0] + 7
-        print("count:", count)
         self._activeSheet.range(f'A8:A{count}') \
             .options(index=False, header=False).value = self._productionReportData['eid']
 
@@ -205,8 +204,7 @@ class WorkbookHandler():
         Copies sheet
         :return: None
         """
-        copySheet = self._wb.macro(
-            f"Module1.copySheetTEST")  # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
+        copySheet = self._wb.macro("Module1.copySheetTEST")  # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
 
         if self._projectCode[-1].upper() == "C":
             copySheet(2)

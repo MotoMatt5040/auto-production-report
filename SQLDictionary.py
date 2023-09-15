@@ -18,7 +18,7 @@ class SQLDictionary:
         :return: String of project ID qry
         """
         if date.today().weekday() == 0:
-            time_delta = 1
+            time_delta = 3
         else:
             time_delta = 1
         projectids = f"{qry['active project ids']} '{date.today() - timedelta(time_delta)}'"

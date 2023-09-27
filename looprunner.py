@@ -35,20 +35,21 @@ def run_loop():
             if prev is None or prev != projectNumber or prev != project:
                 wh.set_project_id(projectNumber)
                 wh.set_project_code(project)
-                while True:
-                    try:
-                        with open(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/"
-                                    f"{wh.get_project_id()}_Production_Report.xlsm", "r+") as file:
-                            break
-                    except IOError:
-                        input(f"Cannot open file: {wh.get_project_id()}\n\n"
-                              f"Please close file then press enter to continue.\n")
+
                 wh.set_path(
                     f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
             if prev is None or prev != projectNumber:
                 wh.check_path()
                 wh.set_workbook()
             prev = projectNumber
+            while True:
+                try:
+                    with open(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/"
+                              f"{wh.get_project_id()}_Production_Report.xlsm", "r+") as file:
+                        break
+                except IOError:
+                    input(f"Cannot open file: {wh.get_project_id()}\n\n"
+                          f"Please close file then press enter to continue.\n")
 
             wh.set_date(active_id_df['recdate'][loc])
             read_excel()

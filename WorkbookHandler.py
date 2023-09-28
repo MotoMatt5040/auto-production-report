@@ -1,16 +1,16 @@
-import pandas as pd
-import numpy as np
 import os
 import shutil
-
-from typing import Union
-from datetime import date, datetime, timedelta
-import xlwings as xw
 from configparser import ConfigParser
+from datetime import date, timedelta
+from pathlib import Path
+from typing import Union
 
+import numpy as np
+import pandas as pd
+import xlwings as xw
 
 config_object = ConfigParser()
-config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini"
+config_path = Path(f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini")
 config_object.read(config_path)
 file_paths = config_object['FILE PATHS']
 del config_object
@@ -188,7 +188,7 @@ class WorkbookHandler():
         """
         if self._activeSheet.range('R1').value is None:
             try:
-                df = pd.read_excel(f"{file_paths['planner']}{self._date.strftime('%Y')}PLANNER.xls")
+                df = pd.read_excel(Path(f"{file_paths['planner']}{self._date.strftime('%Y')}PLANNER.xls"))
                 try:
                     df = df.query(f"`Unnamed: 1` == {int(self.get_project_code())}")
                 except Exception as err:
@@ -213,14 +213,14 @@ class WorkbookHandler():
         del copySheet
 
     def check_path(self):
-        if not os.path.exists(f"{file_paths['src']}{self._projectid}/PRODUCTION/"):
-            src = f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm"
-            os.mkdir(f"{file_paths['src']}{self._projectid}/PRODUCTION/")
+        if not os.path.exists(Path(f"{file_paths['src']}{self._projectid}/PRODUCTION/")):
+            src = Path(f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm")
+            os.mkdir(Path(f"{file_paths['src']}{self._projectid}/PRODUCTION/"))
             dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
         elif not os.path.exists(self.get_path()):
-            src = f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm"
+            src = Path(f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm")
             dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
@@ -262,14 +262,14 @@ class WorkbookHandler():
         else:
             self._projectCode = projectCode
 
-    def set_path(self, path: str = None) -> None:
+    def set_path(self, path: Path = None) -> None:
         """
         Sets path
         :param path: Filepath
         :return: None
         """
         if path is None:
-            path = f"{file_paths['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm"
+            path = Path(f"{file_paths['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm")
         self._path = path
 
     def set_workbook(self, path: str = None) -> None:

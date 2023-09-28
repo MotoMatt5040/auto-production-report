@@ -1,8 +1,12 @@
+"""This file has been deprecated and is no longer supported"""
 import os
 import webbrowser
 from configparser import ConfigParser
 import shutil
+from pathlib import Path
 
+root_path = os.path.abspath(os.sep)
+config_path = Path(root_path) / 'Users' / os.getlogin() / 'AppData' / 'Local' / 'AutoProductionReport'
 config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/"
 if not os.path.exists(config_path):
     os.mkdir(config_path)

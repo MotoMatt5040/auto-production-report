@@ -1,10 +1,10 @@
-from datetime import date, timedelta
-from configparser import ConfigParser
 import os
-
+from configparser import ConfigParser
+from datetime import date, timedelta
+from pathlib import Path
 
 config_object = ConfigParser()
-config_path = f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini"
+config_path = Path(f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini")
 config_object.read(config_path)
 qry = config_object["SQL CODE"]
 del config_object

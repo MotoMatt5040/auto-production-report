@@ -1,9 +1,24 @@
+import os
+import shutil
 import traceback
+from configparser import ConfigParser
+from pathlib import Path
+
 import DataPuller
 import WorkbookHandler
-import checkodbc
 
-file_paths = checkodbc.file_paths
+root_path = os.path.abspath(os.sep)
+config_path = Path(root_path) / f'Users/{os.getlogin()}/AppData/Local/AutoProductionReport'
+if not os.path.exists(config_path):
+    os.mkdir(config_path)
+if not os.path.exists( Path(config_path) / "config.ini"):
+    shutil.copyfile(Path(root_path) / f'Users{os.getlogin()}Downloads/config.ini', Path(config_path) / 'config.ini')
+
+config_object = ConfigParser()
+config_object.read(Path(config_path) / "config.ini")
+file_paths = config_object['FILE PATHS']
+
+
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
 
@@ -37,19 +52,21 @@ def run_loop():
                 wh.set_project_code(project)
 
                 wh.set_path(
-                    f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/{wh.get_project_id()}_Production_Report.xlsm")
+                    Path(file_paths['SRC']) / wh.get_project_id() / 'PRODUCTION' / f"{wh.get_project_id()}_Production_Report.xlsm")
             if prev is None or prev != projectNumber:
                 wh.check_path()
+                while True:
+                    try:
+                        with open(Path(file_paths['SRC']) / wh.get_project_id() / 'PRODUCTION' /
+                                  f"{wh.get_project_id()}_Production_Report.xlsm", "r+") as file:
+                            file.close()
+                        break
+                    except IOError:
+                        input(f"Cannot open file: {wh.get_project_id()}\n\n"
+                              f"Please close file then press enter to continue.\n")
                 wh.set_workbook()
             prev = projectNumber
-            while True:
-                try:
-                    with open(f"{file_paths['SRC']}{wh.get_project_id()}/PRODUCTION/"
-                              f"{wh.get_project_id()}_Production_Report.xlsm", "r+") as file:
-                        break
-                except IOError:
-                    input(f"Cannot open file: {wh.get_project_id()}\n\n"
-                          f"Please close file then press enter to continue.\n")
+
 
             wh.set_date(active_id_df['recdate'][loc])
             read_excel()

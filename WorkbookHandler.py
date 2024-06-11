@@ -38,9 +38,10 @@ class WorkbookHandler():
         self.populate_project_name()  # this needs to be changed to E.g. (HEPA National (CRC))
         self.populate_date()
         self.populate_daily_inc()  # get from sql qry
-        self.populate_expected_loi()  # get from planner
+
         self.populate_avg_daily_loi()  # get from sql qry
         self.populate_avg_overall_loi()  # get from sql qry
+        self.populate_expected_loi()  # get from planner
         self.populate_avg_cph()
         self.populate_avg_mph()
         self.copy_rows()
@@ -186,18 +187,7 @@ class WorkbookHandler():
         Pulls Expected LOI from <YEAR>PLANNER and populates the production report cell
         :return: None
         """
-        if self._activeSheet.range('R1').value is None:
-            try:
-                df = pd.read_excel(Path(f"{file_paths['planner']}{self._date.strftime('%Y')}PLANNER.xls"))
-                try:
-                    df = df.query(f"`Unnamed: 1` == {int(self.get_project_code())}")
-                except Exception as err:
-                    df = df.query(f"`Unnamed: 1` == '{self.get_project_code()}'")
-                df = df.dropna(axis=1, how='all')
-                expectedLOI = df.iloc[0]['Unnamed: 16']
-                self._activeSheet.range('R1').value = expectedLOI
-            except Exception as err:
-                self._activeSheet.range('R1').value = 'ERROR IN READING PLANNER'
+        self._activeSheet.range('R1').options(index=False, header=False).value = self._dispoData['mean']
 
     def copy_sheet(self) -> None:
         """
@@ -235,7 +225,7 @@ class WorkbookHandler():
         return f"{self.get_project_code()} {self._date.strftime('%m%d')}"
 
     def set_app(self):
-        self.app = xw.App(visible= True)
+        self.app = xw.App(visible=True)
 
     def set_project_id(self, projectid: Union[int, str]) -> None:
         """
@@ -304,7 +294,11 @@ class WorkbookHandler():
         if sheetName is None:
             sheetName = self._projectCode
         self._activeSheetName = f"{sheetName} {self._date.strftime('%m%d')}"
-        self._wb.active.name = self._activeSheetName
+        try:
+            self._wb.active.name = self._activeSheetName
+        except Exception as e:
+            print("sheet name already taken", self._activeSheetName)
+            raise (e, "sheet name already taken", self._activeSheetName)
 
     def set_data(self, data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
         """

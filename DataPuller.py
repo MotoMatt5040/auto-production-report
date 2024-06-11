@@ -46,7 +46,6 @@ class DataPuller:
             del cnxn
             return df
         except Exception as err:
-            print(err)
             input("Press Enter to continue...")
         return []
 

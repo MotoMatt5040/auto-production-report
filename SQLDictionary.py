@@ -21,7 +21,13 @@ class SQLDictionary:
             time_delta = 3
         else:
             time_delta = 1
-        projectids = f"{qry['active project ids']} '{date.today() - timedelta(time_delta)}'"
+        # print(date.today())
+        # quit()
+        projectids = f"{qry['active project ids']} '{date.today() - timedelta(1)}'"
+        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate = '2024-05-28'"
+        # projectids = f"{qry['active project ids']} '2024-05-24'"
+        # print(projectids)
+        # quit()
         return projectids
 
     def production_report(self, projectid, date_) -> tuple[str, str, str]:
@@ -33,4 +39,10 @@ class SQLDictionary:
         productionReportDispo = f"{qry['production report dispo']}{projectid}{qry['production report dispo and']}{date_}{qry['production report dispo single']}"
         productionReportAVGLength = f"{qry['production report avg length']}{projectid}{qry['production report avg length and']}{date_}'"
 
-        return productionReport, productionReportDispo, productionReportAVGLength
+        d = productionReport, productionReportDispo, productionReportAVGLength
+
+        # for item in d:
+        #     print(item)
+        # quit()
+
+        return d

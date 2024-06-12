@@ -3,6 +3,10 @@ import shutil
 import traceback
 from configparser import ConfigParser
 from pathlib import Path
+from datetime import datetime
+import pandas as pd
+
+import checkodbc
 
 import DataPuller
 import WorkbookHandler
@@ -25,6 +29,41 @@ wh = WorkbookHandler.WorkbookHandler()
 # TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
+# print(active_id_df.to_string())
+# quit()
+
+# region manual
+# TODO region manual
+# date_list = [
+#     datetime.strptime("2024-06-04", '%Y-%m-%d'),
+#     datetime.strptime("2024-06-04", '%Y-%m-%d'),
+#     datetime.strptime("2024-06-04", '%Y-%m-%d'),
+#     datetime.strptime("2024-06-04", '%Y-%m-%d'),
+#     datetime.strptime("2024-06-04", '%Y-%m-%d'),
+#     datetime.strptime("2024-06-04", '%Y-%m-%d'),
+# ]
+#
+# # When doing manual, make sure to always put ALL LL projects before their cell equivalents, no matter the date.
+# # The dates shown above must be follow the same format as below.
+# active_id = {
+#     'projectid': [
+#         "12842",
+#         "12842C",
+#         "12847",
+#         "12847C",
+#         "12849",
+#         "12849C",
+#     ],
+#     'recdate': date_list
+# }
+# active_id_df = pd.DataFrame(active_id)
+# activeDict = dict.fromkeys(active_id_df['projectid'])
+# TODO: endregion manual
+# endregion manual
+
+# print(active_id_df.to_string())
+print(activeDict)
+# quit()
 
 def read_excel():
     wh.copy_sheet()
@@ -36,9 +75,10 @@ def read_excel():
     except Exception as err:
         print(err)
     wh.set_active_sheet_name()
-    wh.populate_expected_loi()
+
     wh.set_data(dpull.production_report(wh.get_project_code(), wh.get_date()))
     wh.populate_all()
+    wh.populate_expected_loi()
 
 def run_loop():
     try:
@@ -67,7 +107,7 @@ def run_loop():
                 wh.set_workbook()
             prev = projectNumber
 
-
+            print(active_id_df.columns)
             wh.set_date(active_id_df['recdate'][loc])
             read_excel()
 

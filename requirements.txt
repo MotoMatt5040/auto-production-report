@@ -1,3 +1,4 @@
+altgraph==0.17.4
 argcomplete==3.3.0
 charset-normalizer==3.3.2
 colorama==0.4.6
@@ -10,14 +11,19 @@ MarkupSafe==2.1.5
 numpy==2.0.0
 packaging==24.1
 pandas==2.2.2
+pefile==2023.2.7
 prompt-toolkit==3.0.36
+pyinstaller==6.9.0
+pyinstaller-hooks-contrib==2024.7
 pyodbc==5.1.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pytz==2024.1
 pywin32==306
+pywin32-ctypes==0.2.2
 PyYAML==6.0.1
 questionary==2.0.1
+setuptools==70.3.0
 six==1.16.0
 SQLAlchemy==2.0.31
 termcolor==2.4.0

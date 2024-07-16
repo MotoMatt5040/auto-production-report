@@ -1,6 +1,5 @@
 import os
 import shutil
-from configparser import ConfigParser
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Union
@@ -8,12 +7,6 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import xlwings as xw
-
-config_object = ConfigParser()
-config_path = Path(f"C:/Users/{os.getlogin()}/AppData/Local/AutoProductionReport/config.ini")
-config_object.read(config_path)
-file_paths = config_object['FILE PATHS']
-del config_object
 
 
 class WorkbookHandler():
@@ -203,14 +196,14 @@ class WorkbookHandler():
         del copySheet
 
     def check_path(self):
-        if not os.path.exists(Path(f"{file_paths['src']}{self._projectid}/PRODUCTION/")):
-            src = Path(f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm")
-            os.mkdir(Path(f"{file_paths['src']}{self._projectid}/PRODUCTION/"))
+        if not os.path.exists(Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/")):
+            src = Path(f"{os.environ['src']}PRODUCTION/BLANK_Production.xlsm")
+            os.mkdir(Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/"))
             dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
         elif not os.path.exists(self.get_path()):
-            src = Path(f"{file_paths['src']}PRODUCTION/BLANK_Production.xlsm")
+            src = Path(f"{os.environ['src']}PRODUCTION/BLANK_Production.xlsm")
             dst = self.get_path()
             shutil.copy(src, dst)
             del src, dst
@@ -259,7 +252,7 @@ class WorkbookHandler():
         :return: None
         """
         if path is None:
-            path = Path(f"{file_paths['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm")
+            path = Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm")
         self._path = path
 
     def set_workbook(self, path: str = None) -> None:
@@ -308,7 +301,7 @@ class WorkbookHandler():
         """
         productionReportData = data[0]
         productionReportData['intal'] = np.where(productionReportData['cms'] > 0, productionReportData['intal'], np.nan)
-        productionReportData['mph'].where(productionReportData['mph'] != 0.00, np.nan, inplace=True)
+        productionReportData['mph'] = productionReportData['mph'].where(productionReportData['mph'] != 0.00, np.nan)
         dispoData = data[1]
         dailyAVGData = data[2]
 

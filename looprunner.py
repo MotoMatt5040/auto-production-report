@@ -1,27 +1,9 @@
 import os
-import shutil
 import traceback
-from configparser import ConfigParser
 from pathlib import Path
-from datetime import datetime
-import pandas as pd
-
-import checkodbc
 
 import DataPuller
 import WorkbookHandler
-
-root_path = os.path.abspath(os.sep)
-config_path = Path(root_path) / f'Users/{os.getlogin()}/AppData/Local/AutoProductionReport'
-if not os.path.exists(config_path):
-    os.mkdir(config_path)
-if not os.path.exists( Path(config_path) / "config.ini"):
-    shutil.copyfile(Path(root_path) / f'Users{os.getlogin()}Downloads/config.ini', Path(config_path) / 'config.ini')
-
-config_object = ConfigParser()
-config_object.read(Path(config_path) / "config.ini")
-file_paths = config_object['FILE PATHS']
-
 
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
@@ -29,7 +11,7 @@ wh = WorkbookHandler.WorkbookHandler()
 # TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
-# print(active_id_df.to_string())
+print(active_id_df.to_string())
 # quit()
 
 # region manual
@@ -92,12 +74,12 @@ def run_loop():
                 wh.set_project_code(project)
 
                 wh.set_path(
-                    Path(file_paths['SRC']) / wh.get_project_id() / 'PRODUCTION' / f"{wh.get_project_id()}_Production_Report.xlsm")
+                    Path(os.environ['src']) / wh.get_project_id() / 'PRODUCTION' / f"{wh.get_project_id()}_Production_Report.xlsm")
             if prev is None or prev != projectNumber:
                 wh.check_path()
                 while True:
                     try:
-                        with open(Path(file_paths['SRC']) / wh.get_project_id() / 'PRODUCTION' /
+                        with open(Path(os.environ['src']) / wh.get_project_id() / 'PRODUCTION' /
                                   f"{wh.get_project_id()}_Production_Report.xlsm", "r+") as file:
                             file.close()
                         break
@@ -119,7 +101,6 @@ def run_loop():
         wh.app_quit()
     except:
         print(traceback.format_exc())
-        input("Press enter to continue")
 
 
 # TODO REMOVE BELOW, this was a 1 off for a specific project

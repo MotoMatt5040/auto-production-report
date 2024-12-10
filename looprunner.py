@@ -62,6 +62,10 @@ def read_excel():
     wh.populate_all()
     wh.populate_expected_loi()
 
+    # need to populate the CPERF sheet, that data must be grabbed from the dpull method. The problem therein lies with
+    # changing the DBAI, a process must be put in place to change the DBAI to access the correct database then swap back
+    # again
+
 def run_loop():
     try:
         prev = None
@@ -89,7 +93,7 @@ def run_loop():
                 wh.set_workbook()
             prev = projectNumber
 
-            print(active_id_df.columns)
+            print(f'Completed - {project} - {active_id_df["recdate"][loc]}')
             wh.set_date(active_id_df['recdate'][loc])
             read_excel()
 

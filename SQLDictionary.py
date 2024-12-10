@@ -15,8 +15,8 @@ class SQLDictionary:
             time_delta = 1
         # print(date.today())
         # quit()
-        projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(1)}'"
-        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate = '2024-05-28'"
+        projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"
+        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2024-12-05'"
         # projectids = f"{os.environ['active project ids']} '2024-05-24'"
         return projectids
 
@@ -30,6 +30,5 @@ class SQLDictionary:
         productionReportAVGLength = f"{os.environ['production_report_avg_length']}{projectid}{os.environ['production_report_avg_length_and']}{date_}'"
 
         d = productionReport, productionReportDispo, productionReportAVGLength
-
 
         return d

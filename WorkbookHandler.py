@@ -43,9 +43,9 @@ class WorkbookHandler():
 
     def perf_swap(self):
         if self._projectCode.upper().endswith("C"):
-            self.set_active_sheet("CPERF")
+            self.active_sheet = "CPERF"
         else:
-            self.set_active_sheet("LPERF")
+            self.active_sheet = "LPERF"
 
     def populate_perf(self):
         self._activeSheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
@@ -139,12 +139,12 @@ class WorkbookHandler():
         if not os.path.exists(Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/")):
             src = Path(f"{os.environ['src']}PRODUCTION/BLANK_Production.xlsm")
             os.mkdir(Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/"))
-            dst = self.get_path()
+            dst = self.path
             shutil.copy(src, dst)
             del src, dst
-        elif not os.path.exists(self.get_path()):
+        elif not os.path.exists(self.path):
             src = Path(f"{os.environ['src']}PRODUCTION/BLANK_Production.xlsm")
-            dst = self.get_path()
+            dst = self.path
             shutil.copy(src, dst)
             del src, dst
         else:
@@ -155,12 +155,17 @@ class WorkbookHandler():
         Creates sheet Name
         :return: None
         """
-        return f"{self.get_project_code()} {self._date.strftime('%m%d')}"
+        return f"{self.project_code} {self._date.strftime('%m%d')}"
 
     def set_app(self):
         self.app = xw.App(visible=True)
 
-    def set_project_id(self, projectid: Union[int, str]) -> None:
+    @property
+    def project_id(self):
+        return self._projectid
+
+    @project_id.setter
+    def project_id(self, projectid: Union[int, str]) -> None:
         """
         Sets project ID
         :param projectid: Int or String of Project ID
@@ -171,7 +176,12 @@ class WorkbookHandler():
         else:
             self._projectid = projectid
 
-    def set_project_code(self, projectCode) -> None:
+    @property
+    def project_code(self):
+        return self._projectCode
+
+    @project_code.setter
+    def project_code(self, projectCode) -> None:
         """
         Sets Project Code
 
@@ -185,7 +195,12 @@ class WorkbookHandler():
         else:
             self._projectCode = projectCode
 
-    def set_path(self, path: Path = None) -> None:
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, path: Path = None) -> None:
         """
         Sets path
         :param path: Filepath
@@ -195,6 +210,10 @@ class WorkbookHandler():
             path = Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm")
         self._path = path
 
+    @property
+    def workbook(self):
+        return self._wb
+
     def set_workbook(self, path: str = None) -> None:
         """
         Sets workbook
@@ -202,12 +221,17 @@ class WorkbookHandler():
         :return: None
         """
         if path is None:
-            path = self.get_path()
+            path = self.path
 
         self._path = path
         self._wb = self.app.books.open(self._path)
 
-    def set_active_sheet(self, activeSheet: Union[int, str] = None) -> None:
+    @property
+    def active_sheet(self):
+        return self._activeSheet
+
+    @active_sheet.setter
+    def active_sheet(self, activeSheet: Union[int, str] = None) -> None:
         """
         Sets active sheet
         :param activeSheet: Sheet Name
@@ -215,8 +239,17 @@ class WorkbookHandler():
         """
         if activeSheet is None:
             activeSheet = f"{self.get_active_sheet_name()}"
-        self._activeSheet = self.get_workbook().sheets[activeSheet]
+        self._activeSheet = self.workbook.sheets[activeSheet]
         self._wb.active = self._activeSheet
+
+    def get_active_sheet_name(self):
+        """
+        Gets active sheet Name
+        :return: Active Sheet Name
+        """
+        if self.active_sheet.name is None:
+            return 'No active sheet Name'
+        return self.active_sheet.name
 
     def set_active_sheet_name(self, sheetName: str = None) -> None:
         """
@@ -233,7 +266,12 @@ class WorkbookHandler():
             print("sheet name already taken", self._activeSheetName)
             raise (e, "sheet name already taken", self._activeSheetName)
 
-    def set_data(self, data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
         """
         Sets Production Data
         :param data: Pandas Dataframe
@@ -250,97 +288,25 @@ class WorkbookHandler():
         self._dailyAVGData = dailyAVGData
         self._data = data
 
-    def set_date(self, date_):
-        self._date = date_
-
-    def get_workbook(self):
-        """
-        Gets workbook
-        :return: Active Workbook
-        """
-        if self._wb is None:
-            return 'No active workbook'
-        return self._wb
-
-    def get_active_sheet(self):
-        """
-        Gets active sheet
-        :return: Active Sheet
-        """
-        if self._activeSheet is None:
-            return 'No active sheet'
-        return self._activeSheet
-
-    def get_active_sheet_name(self):
-        """
-        Gets active sheet Name
-        :return: Active Sheet Name
-        """
-        if self.get_active_sheet().name is None:
-            return 'No active sheet Name'
-        return self.get_active_sheet().name
-
-    def get_project_id(self) -> str:
-        """
-        Gets project ID
-        :return: Project ID
-        """
-        if self._projectid is None:
-            return 'No project ID'
-        return self._projectid
-
-    def get_project_code(self) -> str:
-        """
-        Gets project Code
-        :return: Project Code
-        """
-        if self._projectCode is None:
-            return 'No project Code'
-        return self._projectCode
-
-    def get_path(self) -> str:
-        """
-        Gets path
-        :return: Path
-        """
-        if self._path is None:
-            return 'No path'
-        return self._path
-
-    def get_production_data(self) -> pd.DataFrame:
-        """
-        Gets Production Data
-        :return: Pandas Dataframe
-        """
+    @property
+    def production_data(self):
         return self._productionReportData
 
-    def get_dispo_data(self) -> pd.DataFrame:
-        """
-        Gets Dispo Data
-        :return: Pandas Dataframe
-        """
+    @property
+    def dispo_data(self):
         return self._dispoData
 
-    def get_daily_avg_data(self) -> pd.DataFrame:
-        """
-        Gets Daily Avg Data
-        :return: Pandas Dataframe
-        """
+    @property
+    def daily_avg_data(self):
         return self._dailyAVGData
 
-    def get_data(self) -> pd.DataFrame:
-        """
-        Gets Production Data
-        :return: Pandas Dataframe
-        """
-        return self._data
-
-    def get_date(self):
-        """
-        Gets date
-        :return: date
-        """
+    @property
+    def date(self):
         return self._date
+
+    @date.setter
+    def date(self, date_):
+        self._date = date_
 
     def save(self) -> None:
         """

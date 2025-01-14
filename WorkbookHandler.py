@@ -27,80 +27,34 @@ class WorkbookHandler():
         Populates all fields in sheet
         :return: None
         """
-        self.populate_projectID()
-        self.populate_project_name()  # this needs to be changed to E.g. (HEPA National (CRC))
-        self.populate_date()
-        self.populate_daily_inc()  # get from sql qry
-
-        self.populate_avg_daily_loi()  # get from sql qry
-        self.populate_avg_overall_loi()  # get from sql qry
-        self.populate_expected_loi()  # get from planner
-        self.populate_avg_cph()
-        self.populate_avg_mph()
+        self.populate_row('A1', self._projectCode)
+        self.populate_row('B1', self._dispoData['projname'])
+        self.populate_row('A2', self._date.strftime("%B %d, %Y (%a)"))
+        self.populate_row('R2', self._dispoData['inc'] / 100)
+        self.populate_row('R3', self._dailyAVGData['avglen'])
+        self.populate_row('R4', self._dispoData['mean'])
+        self.populate_row('R1', self._dispoData['mean'])
+        self.populate_row('U3', self._dailyAVGData['avgcph'])
+        self.populate_row('U4', self._dailyAVGData['avgmph'])
         self.copy_rows()
 
-    def populate_projectID(self) -> None:
-        """
-        Populates Project ID
-        :param project: Project ID
-        :return: None
-        """
-        self._activeSheet.range('A1').options(index=False, header=False).value = self._projectCode
+    def populate_row(self, row: str, val):
+        self._activeSheet.range(row).options(index=False, header=False).value = val
 
-    def populate_project_name(self) -> None:
-        """
-        Populates project name
-        :param projectName: Project name
-        :return: None
-        """
-        # TODO run qry to pull project name
-        self._activeSheet.range('B1').options(index=False, header=False).value = self._dispoData['projname']
+    def perf_swap(self):
+        if self._projectCode.upper().endswith("C"):
+            self.set_active_sheet("CPERF")
+        else:
+            self.set_active_sheet("LPERF")
 
-    def populate_date(self) -> None:
-        """
-        Populates date
-        :return: None
-        """
-        self._activeSheet.range('A2').options(index=False, header=False).value = self._date.strftime(
-            "%B %d, %Y (%a)")
+    def populate_perf(self):
+        self._activeSheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
 
-    def populate_daily_inc(self) -> None:
-        """
-        Populates Daily Incidence
-        :param inc: Daily incedence
-        :return: None
-        """
-        self._activeSheet.range('R2').options(index=False, header=False).value = self._dispoData['inc'] / 100
+    def cperf(self):
+        ...
 
-    def populate_avg_daily_loi(self) -> None:
-        """
-        Populates Avg. Daily LOI
-        :param loi: AVG Daily LOI
-        :return: None
-        """
-        self._activeSheet.range('R3').options(index=False, header=False).value = self._dailyAVGData['avglen']
-
-    def populate_avg_overall_loi(self) -> None:
-        """
-        Populates Avg. Overall LOI
-        :param loi: AVG Overall LOI
-        :return: None
-        """
-        self._activeSheet.range('R4').options(index=False, header=False).value = self._dispoData['mean']
-
-    def populate_avg_cph(self):
-        """
-        Populates Avg. CPH
-        :return: None
-        """
-        self._activeSheet.range('U3').options(index=False, header=False).value = self._dailyAVGData['avgcph']
-
-    def populate_avg_mph(self):
-        """
-        Populates Avg. MPH
-        :return: None
-        """
-        self._activeSheet.range('U4').options(index=False, header=False).value = self._dailyAVGData['avgmph']
+    def lperf(self):
+        ...
 
     def copy_rows(self) -> None:
         """
@@ -108,72 +62,58 @@ class WorkbookHandler():
         :param count: Number of rows to copy
         :return: None
         """
+
         count = self._productionReportData.shape[0] + 7
-        self._activeSheet.range(f'A8:A{count}') \
-            .options(index=False, header=False).value = self._productionReportData['eid']
 
-        self._activeSheet.range(f'B8:B{count}') \
-            .options(index=False, header=False).value = self._productionReportData['refname']
-
-        self._activeSheet.range(f'C8:C{count}') \
-            .options(index=False, header=False).value = self._productionReportData['recloc']
-
-        self._activeSheet.range(f'D8:D{count}') \
-            .options(index=False, header=False).value = self._productionReportData['tenure']
-
-        self._activeSheet.range(f'E8:E{count}') \
-            .options(index=False, header=False).value = self._productionReportData['hrs']
-
-        self._activeSheet.range(f'F8:F{count}') \
-            .options(index=False, header=False).value = self._productionReportData['connecttime']
-
-        self._activeSheet.range(f'H8:H{count}') \
-            .options(index=False, header=False).value = self._productionReportData['pausetime']
-
-        self._activeSheet.range(f'L8:L{count}') \
-            .options(index=False, header=False).value = self._productionReportData['cms']
-
-        self._activeSheet.range(f'Q8:Q{count}') \
-            .options(index=False, header=False).value = self._productionReportData['intal']
-
-        self._activeSheet.range(f'S8:S{count}') \
-            .options(index=False, header=False).value = self._productionReportData['mph']
-
-        self._activeSheet.range(f'T8:T{count}') \
-            .options(index=False, header=False).value = self._productionReportData['totaldials']
+        self.populate_row(f'A8:A{count}', self._productionReportData['eid'])
+        self.populate_row(f'B8:B{count}', self._productionReportData['refname'])
+        self.populate_row(f'C8:C{count}', self._productionReportData['recloc'])
+        self.populate_row(f'D8:D{count}', self._productionReportData['tenure'])
+        self.populate_row(f'E8:E{count}', self._productionReportData['hrs'])
+        self.populate_row(f'F8:F{count}', self._productionReportData['connecttime'])
 
         formula = self._activeSheet.range("G8").formula
-        self._activeSheet.range(f"G8:G{count}").formula = formula
+        self.populate_row(f'G8:G{count}', formula)
+
+        self.populate_row(f'H8:H{count}', self._productionReportData['pausetime'])
 
         formula = self._activeSheet.range("I8").formula
-        self._activeSheet.range(f"I8:I{count}").formula = formula
+        self.populate_row(f'I8:I{count}', formula)
 
         formula = self._activeSheet.range("J8").formula
-        self._activeSheet.range(f"J8:J{count}").formula = formula
+        self.populate_row(f'J8:J{count}', formula)
 
         formula = self._activeSheet.range("K8").formula
-        self._activeSheet.range(f"K8:K{count}").formula = formula
+        self.populate_row(f'K8:K{count}', formula)
+
+        self.populate_row(f'L8:L{count}', self._productionReportData['cms'])
 
         formula = self._activeSheet.range("M8").formula
-        self._activeSheet.range(f"M8:M{count}").formula = formula
+        self.populate_row(f'M8:M{count}', formula)
 
         formula = self._activeSheet.range("N8").formula
-        self._activeSheet.range(f"N8:N{count}").formula = formula
+        self.populate_row(f'N8:N{count}', formula)
 
         formula = self._activeSheet.range("O8").formula
-        self._activeSheet.range(f"O8:O{count}").formula = formula
+        self.populate_row(f'O8:O{count}', formula)
 
         formula = self._activeSheet.range("P8").formula
-        self._activeSheet.range(f"P8:P{count}").formula = formula
+        self.populate_row(f'P8:P{count}', formula)
+
+        self.populate_row(f'Q8:Q{count}', self._productionReportData['intal'])
 
         formula = self._activeSheet.range("R8").formula
-        self._activeSheet.range(f"R8:R{count}").formula = formula
+        self.populate_row(f'R8:R{count}', formula)
+
+        self.populate_row(f'S8:S{count}', self._productionReportData['mph'])
+
+        self.populate_row(f'T8:T{count}', self._productionReportData['totaldials'])
 
         formula = self._activeSheet.range("U8").formula
-        self._activeSheet.range(f"U8:U{count}").formula = formula
+        self.populate_row(f'U8:U{count}', formula)
 
         formula = self._activeSheet.range("V8").formula
-        self._activeSheet.range(f"V8:V{count}").formula = formula
+        self.populate_row(f'V8:V{count}', formula)
 
     def populate_expected_loi(self):
         """

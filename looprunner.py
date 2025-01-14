@@ -4,9 +4,11 @@ from pathlib import Path
 
 import DataPuller
 import WorkbookHandler
+from DataBaseAccessInfo import DataBaseAccessInfo
 
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
+dbai = DataBaseAccessInfo()
 
 # TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
@@ -50,15 +52,15 @@ print(activeDict)
 def read_excel():
     wh.copy_sheet()
     try:
-        if wh.get_project_code().upper()[-1] == "C":
-            wh.set_active_sheet("PROJ#C DATE (2)")
+        if wh.project_code.upper()[-1] == "C":
+            wh.active_sheet = "PROJ#C DATE (2)"
         else:
-            wh.set_active_sheet("PROJ# DATE (2)")
+            wh.active_sheet = "PROJ# DATE (2)"
     except Exception as err:
         print(err)
     wh.set_active_sheet_name()
 
-    wh.set_data(dpull.production_report(wh.get_project_code(), wh.get_date()))
+    wh.data = dpull.production_report(wh.project_code, wh.date)
     wh.populate_all()
     wh.populate_expected_loi()
 
@@ -74,27 +76,26 @@ def run_loop():
             projectNumber = project[:5]
 
             if prev is None or prev != projectNumber or prev != project:
-                wh.set_project_id(projectNumber)
-                wh.set_project_code(project)
+                wh.project_id = projectNumber
+                wh.project_code = project
 
-                wh.set_path(
-                    Path(os.environ['src']) / wh.get_project_id() / 'PRODUCTION' / f"{wh.get_project_id()}_Production_Report.xlsm")
+                wh._path = Path(os.environ['src']) / wh.project_id / 'PRODUCTION' / f"{wh.project_id}_Production_Report.xlsm"
             if prev is None or prev != projectNumber:
                 wh.check_path()
                 while True:
                     try:
-                        with open(Path(os.environ['src']) / wh.get_project_id() / 'PRODUCTION' /
-                                  f"{wh.get_project_id()}_Production_Report.xlsm", "r+") as file:
+                        with open(Path(os.environ['src']) / wh.project_id / 'PRODUCTION' /
+                                  f"{wh.project_id}_Production_Report.xlsm", "r+") as file:
                             file.close()
                         break
                     except IOError:
-                        input(f"Cannot open file: {wh.get_project_id()}\n\n"
+                        input(f"Cannot open file: {wh.project_id}\n\n"
                               f"Please close file then press enter to continue.\n")
                 wh.set_workbook()
             prev = projectNumber
 
             print(f'Completed - {project} - {active_id_df["recdate"][loc]}')
-            wh.set_date(active_id_df['recdate'][loc])
+            wh.date = active_id_df['recdate'][loc]
             read_excel()
 
             if loc >= len(active_id_df['projectid']) - 1 or projectNumber != active_id_df['projectid'][loc + 1][:5]:

@@ -3,6 +3,7 @@ from sqlalchemy import text
 from DataBaseAccessInfo import DataBaseAccessInfo
 from SQLDictionary import SQLDictionary
 import traceback
+import os
 
 
 def error_log(err):
@@ -29,7 +30,7 @@ class DataPuller:
 
     def active_project_ids(self):
         try:
-            cnxn = self.dbai.connection
+            cnxn = self.dbai.connect_engine()
             df = pd.read_sql_query(text(self.sqld.project_id_list()), cnxn)
             cnxn.close()
             del cnxn
@@ -39,7 +40,7 @@ class DataPuller:
 
     def production_report(self, projectid, date) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         try:
-            cnxn = self.dbai.connection
+            cnxn = self.dbai.connect_engine()
             data = self.sqld.production_report(projectid, date)
             productionReport = pd.read_sql_query(text(data[0]), cnxn)
             productionReportDispo = pd.read_sql_query(text(data[1]), cnxn)
@@ -49,6 +50,18 @@ class DataPuller:
             return productionReport, productionReportDispo, productionReportDailyAVG
         except Exception as err:
             raise err
+
+    def get_voxco_project_database(self, project_number: str):
+        try:
+            self.dbai.find_voxco_project_database()
+            cnxn = self.dbai.connect_engine()
+            df = pd.read_sql_query(text(f"{os.environ['voxco_project_database']}{project_number}'"), cnxn)
+            cnxn.close()
+            del cnxn
+            return df
+        except Exception as err:
+            raise err
+
 
 
 

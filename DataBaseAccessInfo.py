@@ -3,7 +3,6 @@ import os
 from sqlalchemy import create_engine
 import webbrowser
 
-
 class DataBaseAccessInfo:
     _isInstance = None
 
@@ -33,6 +32,24 @@ class DataBaseAccessInfo:
             self._driver, self._servername, self._database, self._userid, self._password
         )
         return URI
+
+    def promark_db(self):
+        self.server = os.environ['coreserver']
+        self.database = os.environ['caligula']
+        self.user_id = os.environ['coreuser']
+        self.password = os.environ['corepassword']
+
+    def voxco_db(self):
+        self.server = os.environ['cc3server']
+        self.database = self.find_voxco_project_database
+        self.user_id = os.environ['cc3user']
+        self.password = os.environ['cc3password']
+
+    def find_voxco_project_database(self):
+        self.server = os.environ['cc3server']
+        self.database = os.environ['voxco']
+        self.user_id = os.environ['cc3user']
+        self.password = os.environ['cc3password']
 
     @property
     def driver(self):
@@ -75,10 +92,6 @@ class DataBaseAccessInfo:
         return create_engine(self.dbcon)
 
     @property
-    def connection(self):
-        return self.engine.connect()
-
-    @property
     def sql_connection_string(self):
         return f"DRIVER={self._driver};SERVER={self._servername};DATABASE={self._database};UID={self._userid};PWD={self._password}"
 
@@ -89,7 +102,8 @@ class DataBaseAccessInfo:
     def connect_engine(self):
         try:
             return self.engine.connect()
-        except Exception:
+        except Exception as err:
+            print(err)
             print("No ODBC Driver detected. Please install Microsoft ODBC Driver 17 for SQL Server from "
                   "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16#version-17")
             webbrowser.open(

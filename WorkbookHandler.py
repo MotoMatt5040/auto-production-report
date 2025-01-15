@@ -10,7 +10,7 @@ import xlwings as xw
 
 
 class WorkbookHandler():
-    app = xw.App(visible=True)
+    app = xw.App(visible=True, add_book=False)
 
     def __init__(self):
         self._projectid = None

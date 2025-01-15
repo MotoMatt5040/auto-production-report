@@ -43,12 +43,35 @@ class WorkbookHandler():
 
     def perf_swap(self):
         if self._projectCode.upper().endswith("C"):
-            self.active_sheet = "CPERF"
+            self.active_sheet = "C-PERF"
         else:
-            self.active_sheet = "LPERF"
+            self.active_sheet = "L-PERF"
 
     def populate_perf(self):
         self._activeSheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
+        # TODO Values to update
+        '''
+        V29 AA AB AC
+        V32
+        V35
+        V38
+        V41
+        V44
+        
+            1  2  3  4  5  6+
+        V53 X  Y  Z  AA AB AC
+        V56
+        V59
+        V62
+        V65
+        V68
+        
+        self.date
+        
+        
+        '''
+
+
 
     def cperf(self):
         ...

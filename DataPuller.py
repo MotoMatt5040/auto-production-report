@@ -4,6 +4,7 @@ from DataBaseAccessInfo import DataBaseAccessInfo
 from SQLDictionary import SQLDictionary
 import traceback
 import os
+from utils.logger_config import logger
 
 
 def error_log(err):
@@ -56,6 +57,21 @@ class DataPuller:
             self.dbai.find_voxco_project_database()
             cnxn = self.dbai.connect_engine()
             df = pd.read_sql_query(text(f"{os.environ['voxco_project_database']}{project_number}'"), cnxn)
+            cnxn.close()
+            del cnxn
+            return df
+        except Exception as err:
+            raise err
+
+    def get_voxco_data_sample(self, database: str, date: str):
+        try:
+            self.dbai.voxco_db(database)
+            logger.debug(database)
+            logger.debug(self.dbai.get_info())
+            cnxn = self.dbai.connect_engine()
+            # print(self.sqld.voxco_sample_data(database, date))
+            logger.debug(self.sqld.voxco_sample_data(database, date))
+            df = pd.read_sql_query(text(self.sqld.voxco_sample_data(database, date)), cnxn)
             cnxn.close()
             del cnxn
             return df

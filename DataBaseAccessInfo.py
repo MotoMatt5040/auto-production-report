@@ -39,9 +39,9 @@ class DataBaseAccessInfo:
         self.user_id = os.environ['coreuser']
         self.password = os.environ['corepassword']
 
-    def voxco_db(self):
+    def voxco_db(self, voxco_db_number: str):
         self.server = os.environ['cc3server']
-        self.database = self.find_voxco_project_database
+        self.database = voxco_db_number
         self.user_id = os.environ['cc3user']
         self.password = os.environ['cc3password']
 

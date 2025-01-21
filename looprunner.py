@@ -5,10 +5,13 @@ from pathlib import Path
 import DataPuller
 import WorkbookHandler
 from DataBaseAccessInfo import DataBaseAccessInfo
+import sys
+from utils.logger_config import logger
 
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
 dbai = DataBaseAccessInfo()
+logger.debug("STARTING")
 
 # TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
@@ -64,11 +67,21 @@ def read_excel():
     wh.populate_all()
     wh.populate_expected_loi()
 
+    logger.debug(wh.project_code)
+    voxco_db_number = dpull.get_voxco_project_database(wh.project_code)['ProjectDatabase'][0]
+
+    dbai.voxco_db(voxco_db_number)
+    logger.debug(wh.date)
+    sample = dpull.get_voxco_data_sample(voxco_db_number, wh.date)
+    # print(sample.to_string())
+    sys.exit()
+
     # need to populate the CPERF sheet, that data must be grabbed from the dpull method. The problem therein lies with
     # changing the DBAI, a process must be put in place to change the DBAI to access the correct database then swap back
     # again
 
 def run_loop():
+    dbai.promark_db()
     try:
         prev = None
         loc = 0
@@ -106,25 +119,3 @@ def run_loop():
         wh.app_quit()
     except:
         print(traceback.format_exc())
-
-
-# TODO REMOVE BELOW, this was a 1 off for a specific project
-# date_list = [
-#     datetime.strptime('2023-07-21', '%Y-%m-%d'),
-#     datetime.strptime('2023-07-22', '%Y-%m-%d'),
-#     datetime.strptime('2023-07-21', '%Y-%m-%d'),
-#     datetime.strptime('2023-07-22', '%Y-%m-%d'),
-# ]
-#
-# active_id = {
-#     'projectid': ['12644', '12644', '12644C', '12644C'],
-#     'recdate': date_list
-# }
-# active_id_df = pd.DataFrame(active_id)
-# activeDict = dict.fromkeys(active_id_df['projectid'])
-#
-# print(active_id_df.to_string())
-# print(activeDict)
-# quit()
-#
-# # 20210809	20210815

@@ -2,6 +2,7 @@ import os
 
 from sqlalchemy import create_engine
 import webbrowser
+from utils.logger_config import logger
 
 class DataBaseAccessInfo:
     _isInstance = None

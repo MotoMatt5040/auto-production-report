@@ -49,12 +49,12 @@ class WorkbookHandler():
         else:
             self.active_sheet = "L-PERF"
 
-    def populate_perf(self, sample_data: dict[dict, dict, dict]):
+    def populate_perf(self, sample_data, prel_data):
         self.active_sheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
         # TODO Values to update
 
         '''
-        V30 AA AB AC
+        V30 X  Y  Z  AA AB AC
         V33
         V36
         V39
@@ -73,7 +73,43 @@ class WorkbookHandler():
         
         
         '''
-        current_day = 1
+
+        columns = ['X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']
+
+        row = 30
+        column = 'V'
+        cell = None
+        while True:
+            cell = self.active_sheet.range(f'{column}{row}')
+            if cell.value is None:
+                break
+            row += 3
+
+        if cell is None:
+            raise ValueError("Cell is None. Please check the V column date cell start at 30 and increments by 3.")
+
+        cell.value = self._date
+        cell.number_format = "d-mmm"
+        import json
+        print(json.dumps(prel_data, indent=4))
+
+        for key, value in prel_data['total'].items():
+            # logger.debug(f"{key}, {value}")
+            if key == '<>':
+                column_index = 0
+            else:
+                column_index = int(key) + 1
+
+            logger.debug(column_index)
+            self.active_sheet.range(f'{columns[column_index]}{row}').value = value
+
+        for key, value in prel_data['co'].items():
+            if key == '<>':
+                column_index = 0
+            else:
+                column_index = int(key) + 1
+            self.active_sheet.range(f'{columns[column_index]}{row + 1}').value = value
+
         row = 54
         column = 'V'
         cell = None
@@ -81,17 +117,14 @@ class WorkbookHandler():
             cell = self.active_sheet.range(f'{column}{row}')
             if cell.value is None:
                 break
-            else:
-                current_day += 1
             row += 6
 
         if cell is None:
-            raise ValueError("Cell is None. Please check the V column date cell start at 53 and increments by 3.")
+            raise ValueError("Cell is None. Please check the V column date cell start at 54 and increments by 6.")
 
         cell.value = self._date
         cell.number_format = "d-mmm"
 
-        columns = ['X', 'Y', 'Z', 'AA', 'AB', 'AC']
         for value in sample_data['used_sample_call_count']:
             self.active_sheet.range(f'{columns[value-1]}{row}').value = sample_data['used_sample_call_count'][value]
 
@@ -374,8 +407,8 @@ class WorkbookHandler():
         Saves workbook
         :return: None
         """
-        import sys
-        sys.exit()
+        # import sys
+        # sys.exit()
         self._wb.save(f"{self._path}")
 
     def close(self) -> None:

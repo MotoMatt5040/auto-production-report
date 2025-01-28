@@ -50,3 +50,18 @@ class SQLDictionary:
 
         return qry
 
+    def voxco_prel_sample_data(self, database: str, start_date: str, prel: int) -> str:
+        """"""
+        logger.debug(type(start_date))
+        end_date = start_date + timedelta(hours=24)
+
+        qry = f"""
+            USE {database}
+            {os.environ['prel_qry']}
+            WHERE {os.environ['call_date']} >= '{start_date} 10:00' 
+            AND {os.environ['call_date']} < '{end_date} 10:00'
+            AND {os.environ['rpsq']}
+            """
+
+        return qry
+

@@ -76,8 +76,9 @@ def read_excel():
 
     dbai.voxco_db(voxco_db_number)
     sample = dpull.get_voxco_data_sample(voxco_db_number, wh.date)
+    prel = dpull.get_prel_data_sample(voxco_db_number, wh.date)
     wh.perf_swap()
-    wh.populate_perf(sample_data=sample)
+    wh.populate_perf(sample_data=sample, prel_data=prel)
     # sys.exit()
 
     # need to populate the CPERF sheet, that data must be grabbed from the dpull method. The problem therein lies with

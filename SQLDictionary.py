@@ -15,8 +15,8 @@ class SQLDictionary:
             time_delta = 3
         else:
             time_delta = 1
-        # projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"
-        projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2024-07-29' and RecDate <= '2024-07-31' and projectid = '12886' or projectid = '12886C'"
+        projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"
+        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2024-07-29' and RecDate <= '2024-07-31' and projectid = '12886C' or projectid = '12886'"
         # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2025-01-14'"
         # projectids = f"{os.environ['active project ids']} '2024-05-24'"
         return projectids
@@ -56,12 +56,16 @@ class SQLDictionary:
         end_date = start_date + timedelta(hours=24)
 
         qry = f"""
-            USE {database}
-            {os.environ['prel_qry']}
+            SELECT {os.environ['prel_columns']}
+            FROM [{database}]{os.environ['voxco_table']}
+            INNER JOIN [{database}]{os.environ['prel_table']}
+            ON {os.environ['prel_on']}
             WHERE {os.environ['call_date']} >= '{start_date} 10:00' 
             AND {os.environ['call_date']} < '{end_date} 10:00'
             AND {os.environ['rpsq']}
             """
+
+        logger.debug(qry)
 
         return qry
 

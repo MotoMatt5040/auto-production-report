@@ -1,5 +1,6 @@
 import os
 from datetime import date, timedelta, datetime
+from utils.logger_config import logger
 date_format = "%Y-%m-%d"
 
 
@@ -14,10 +15,9 @@ class SQLDictionary:
             time_delta = 3
         else:
             time_delta = 1
-        # print(date.today())
-        # quit()
-        projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"
-        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2024-12-17'"
+        # projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"
+        projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2024-07-29' and RecDate <= '2024-07-31' and projectid = '12886' or projectid = '12886C'"
+        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2025-01-14'"
         # projectids = f"{os.environ['active project ids']} '2024-05-24'"
         return projectids
 
@@ -34,20 +34,19 @@ class SQLDictionary:
 
         return d
 
-    def voxco_sample_data(self, database: str, _date: str) -> str:
+    def voxco_sample_data(self, database: str, start_date: str) -> str:
         """"""
-        _date = datetime.strptime(_date, "%Y-%m-%d")  # Adjust format if needed
-        end_date = _date + timedelta(hours=24)
-
-        start_date = _date.strftime("%Y-%m-%d %H:%M:%S")
-        end_date_str = end_date.strftime("%Y-%m-%d %H:%M:%S")
+        logger.debug(type(start_date))
+        end_date = start_date + timedelta(hours=24)
 
         qry = f"""
-            SELECT COUNT(*)
+            SELECT {os.environ['voxco_columns']}
             FROM [{database}]{os.environ['voxco_table']}
             WHERE {os.environ['call_date']} >= '{start_date} 10:00' 
-            AND {os.environ['call_date']} < '{end_date_str} 10:00'
+            AND {os.environ['call_date']} < '{end_date} 10:00'
+            AND {os.environ['voxco_where']}
             """
+
 
         return qry
 

@@ -16,7 +16,7 @@ logger.debug("STARTING")
 # TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
 activeDict = dict.fromkeys(active_id_df['projectid'])
-print(active_id_df.to_string())
+logger.info(active_id_df.to_string())
 # quit()
 
 # region manual
@@ -48,8 +48,7 @@ print(active_id_df.to_string())
 # TODO: endregion manual
 # endregion manual
 
-# print(active_id_df.to_string())
-print(activeDict)
+logger.info(activeDict)
 # quit()
 
 def read_excel():
@@ -60,8 +59,10 @@ def read_excel():
         else:
             wh.active_sheet = "PROJ# DATE (2)"
     except Exception as err:
-        print(err)
+        logger.error(err)
     wh.set_active_sheet_name()
+
+    logger.debug(dbai.get_info())
 
     wh.data = dpull.production_report(wh.project_code, wh.date)
     wh.populate_all()
@@ -70,22 +71,25 @@ def read_excel():
     logger.debug(wh.project_code)
     voxco_db_number = dpull.get_voxco_project_database(wh.project_code)['ProjectDatabase'][0]
 
+    logger.info(f"sheet index: {wh.sheet_index}")
+    # TODO Using sheet index we can deduce which day we are on for the purpose of column selection
+
     dbai.voxco_db(voxco_db_number)
-    logger.debug(wh.date)
     sample = dpull.get_voxco_data_sample(voxco_db_number, wh.date)
-    # print(sample.to_string())
-    sys.exit()
+    wh.perf_swap()
+    wh.populate_perf(sample_data=sample)
+    # sys.exit()
 
     # need to populate the CPERF sheet, that data must be grabbed from the dpull method. The problem therein lies with
     # changing the DBAI, a process must be put in place to change the DBAI to access the correct database then swap back
     # again
 
 def run_loop():
-    dbai.promark_db()
     try:
         prev = None
         loc = 0
         for project in active_id_df['projectid']:
+            dbai.promark_db()
             projectNumber = project[:5]
 
             if prev is None or prev != projectNumber or prev != project:
@@ -107,7 +111,7 @@ def run_loop():
                 wh.set_workbook()
             prev = projectNumber
 
-            print(f'Completed - {project} - {active_id_df["recdate"][loc]}')
+            logger.debug(f'Completed - {project} - {active_id_df["recdate"][loc]}')
             wh.date = active_id_df['recdate'][loc]
             read_excel()
 
@@ -118,4 +122,4 @@ def run_loop():
 
         wh.app_quit()
     except:
-        print(traceback.format_exc())
+        logger.error(traceback.format_exc())

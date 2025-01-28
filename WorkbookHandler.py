@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import xlwings as xw
 
+from utils.logger_config import logger
+
 
 class WorkbookHandler():
     app = xw.App(visible=True, add_book=False)
@@ -47,31 +49,59 @@ class WorkbookHandler():
         else:
             self.active_sheet = "L-PERF"
 
-    def populate_perf(self):
-        self._activeSheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
+    def populate_perf(self, sample_data: dict[dict, dict, dict]):
+        self.active_sheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
         # TODO Values to update
+
         '''
-        V29 AA AB AC
-        V32
-        V35
-        V38
-        V41
-        V44
+        V30 AA AB AC
+        V33
+        V36
+        V39
+        V42
+        V45
         
             1  2  3  4  5  6+
-        V53 X  Y  Z  AA AB AC
-        V56
-        V59
-        V62
-        V65
-        V68
+        V54 X  Y  Z  AA AB AC
+        V60
+        V66
+        V72
+        V78
+        V84
         
         self.date
         
         
         '''
+        current_day = 1
+        row = 54
+        column = 'V'
+        cell = None
+        while True:
+            cell = self.active_sheet.range(f'{column}{row}')
+            if cell.value is None:
+                break
+            else:
+                current_day += 1
+            row += 6
 
+        if cell is None:
+            raise ValueError("Cell is None. Please check the V column date cell start at 53 and increments by 3.")
 
+        cell.value = self._date
+        cell.number_format = "d-mmm"
+
+        columns = ['X', 'Y', 'Z', 'AA', 'AB', 'AC']
+        for value in sample_data['used_sample_call_count']:
+            self.active_sheet.range(f'{columns[value-1]}{row}').value = sample_data['used_sample_call_count'][value]
+
+        for value in sample_data['live_connects_call_count']:
+            self.active_sheet.range(f'{columns[value-1]}{row+1}').value = sample_data['live_connects_call_count'][value]
+
+        for value in sample_data['co_case_count']:
+            self.active_sheet.range(f'{columns[value-1]}{row+3}').value = sample_data['co_case_count'][value]
+
+        # logger.debug(sample_data)
 
     def cperf(self):
         ...
@@ -184,6 +214,10 @@ class WorkbookHandler():
         self.app = xw.App(visible=True)
 
     @property
+    def sheet_index(self):
+        return self._activeSheet.index
+
+    @property
     def project_id(self):
         return self._projectid
 
@@ -265,6 +299,10 @@ class WorkbookHandler():
         self._activeSheet = self.workbook.sheets[activeSheet]
         self._wb.active = self._activeSheet
 
+    @property
+    def active_sheet_name(self):
+        return self.active_sheet.name
+
     def get_active_sheet_name(self):
         """
         Gets active sheet Name
@@ -336,6 +374,8 @@ class WorkbookHandler():
         Saves workbook
         :return: None
         """
+        import sys
+        sys.exit()
         self._wb.save(f"{self._path}")
 
     def close(self) -> None:

@@ -1,3 +1,5 @@
+from typing import Dict
+
 import pandas as pd
 from sqlalchemy import text
 from DataBaseAccessInfo import DataBaseAccessInfo
@@ -6,7 +8,6 @@ import traceback
 import os
 from utils.logger_config import logger
 from datetime import datetime
-
 
 def error_log(err):
     print("\n\n\n")
@@ -64,7 +65,7 @@ class DataPuller:
         except Exception as err:
             raise err
 
-    def get_voxco_data_sample(self, database: str, date) -> dict[dict, dict, dict]:
+    def get_voxco_data_sample(self, database: str, date):
         """
         Retrieves and processes sample data from a Voxco database.
 
@@ -106,7 +107,7 @@ class DataPuller:
               executing multiple queries.
         """
         try:
-            self.dbai.voxco_db(database)
+            # self.dbai.voxco_db(database)
             cnxn = self.dbai.connect_engine()
             df = pd.read_sql_query(text(self.sqld.voxco_sample_data(database, date)), cnxn)
             cnxn.close()
@@ -141,36 +142,43 @@ class DataPuller:
             logger.debug(dfls['live_connects_call_count_2'].shape[0])
             logger.debug(dfls['live_connects_call_count_3'].shape[0])
 
-            # TODO Determin if i just need to store the shape rather than the values. If the filtering is handled here
-            # TODO where the data is pulled then perhaps we may see better performance rather than passing large data
-            # TODO frames
+            data = {
+                'used_sample_call_count': {n: dfs[f'used_sample_call_count_{n}'].shape[0] for n in range(1, 7)},
+                'live_connects_call_count': {n: dfls[f'live_connects_call_count_{n}'].shape[0] for n in range(1, 7)},
+                'co_case_count': {n: dfls_CO[f'co_case_count_{n}'].shape[0] for n in range(1, 7)}
+            }
+
+            return data
+        except Exception as err:
+            raise err
+
+    def get_prel_data_sample(self, database: str, date):
+        try:
+            # self.dbai.voxco_db(database)
+            cnxn = self.dbai.connect_engine()
+            logger.debug(cnxn)
+            logger.debug(self.dbai.get_info())
+            df = pd.read_sql_query(text(self.sqld.voxco_prel_sample_data(database, date)), cnxn)
+            cnxn.close()
+            del cnxn
+
+            # NOTE: This is faster than running queries. It takes double the time to run multiple queries.
+
+            filters = [0, 1, 2, 3, 4, 5]
+            dfs = {'prel_<>': df[df['RpsContent'].isna()]}
+            dfs.update({f"prel_{n}": df[df['RpsContent'] == str(n)] for n in filters})
+
+            dfco = {
+                key.replace('prel_', 'co_'): value[value['HisCaseResult'] == 'CO']
+                for key, value in dfs.items()
+            }
 
             data = {
-                'used_sample_call_count': {
-                    1: dfs['used_sample_call_count_1'].shape[0],
-                    2: dfs['used_sample_call_count_2'].shape[0],
-                    3: dfs['used_sample_call_count_3'].shape[0],
-                    4: dfs['used_sample_call_count_4'].shape[0],
-                    5: dfs['used_sample_call_count_5'].shape[0],
-                    6: dfs['used_sample_call_count_6'].shape[0]
-                },
-                'live_connects_call_count': {
-                    1: dfls['live_connects_call_count_1'].shape[0],
-                    2: dfls['live_connects_call_count_2'].shape[0],
-                    3: dfls['live_connects_call_count_3'].shape[0],
-                    4: dfls['live_connects_call_count_4'].shape[0],
-                    5: dfls['live_connects_call_count_5'].shape[0],
-                    6: dfls['live_connects_call_count_6'].shape[0]
-                },
-                'co_case_count': {
-                    1: dfls_CO['co_case_count_1'].shape[0],
-                    2: dfls_CO['co_case_count_2'].shape[0],
-                    3: dfls_CO['co_case_count_3'].shape[0],
-                    4: dfls_CO['co_case_count_4'].shape[0],
-                    5: dfls_CO['co_case_count_5'].shape[0],
-                    6: dfls_CO['co_case_count_6'].shape[0]
-                }
+                'total': {key.replace('prel_', ''): dfs[key].shape[0] for key in dfs},
+                'co': {key.replace('co_', ''): dfco[key].shape[0] for key in dfco}
             }
+
+            logger.debug(data)
 
             return data
         except Exception as err:

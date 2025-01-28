@@ -50,7 +50,7 @@ class SQLDictionary:
 
         return qry
 
-    def voxco_prel_sample_data(self, database: str, start_date: str, prel: int) -> str:
+    def voxco_prel_sample_data(self, database: str, start_date: str) -> str:
         """"""
         logger.debug(type(start_date))
         end_date = start_date + timedelta(hours=24)

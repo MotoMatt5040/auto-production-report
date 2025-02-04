@@ -51,34 +51,11 @@ class WorkbookHandler():
 
     def populate_perf(self, sample_data, prel_data):
         self.active_sheet.range('A2').options(index=False, header=False).value = self._dispoData['projname']
-        # TODO Values to update
-
-        '''
-        V30 X  Y  Z  AA AB AC
-        V33
-        V36
-        V39
-        V42
-        V45
-        
-            1  2  3  4  5  6+
-        V54 X  Y  Z  AA AB AC
-        V60
-        V66
-        V72
-        V78
-        V84
-        
-        self.date
-        
-        
-        '''
 
         columns = ['X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']
 
         row = 30
         column = 'V'
-        cell = None
         while True:
             cell = self.active_sheet.range(f'{column}{row}')
             if cell.value is None:
@@ -90,8 +67,6 @@ class WorkbookHandler():
 
         cell.value = self._date
         cell.number_format = "d-mmm"
-        import json
-        print(json.dumps(prel_data, indent=4))
 
         for key, value in prel_data['total'].items():
             # logger.debug(f"{key}, {value}")
@@ -100,7 +75,6 @@ class WorkbookHandler():
             else:
                 column_index = int(key) + 1
 
-            logger.debug(column_index)
             self.active_sheet.range(f'{columns[column_index]}{row}').value = value
 
         for key, value in prel_data['co'].items():
@@ -112,7 +86,6 @@ class WorkbookHandler():
 
         row = 54
         column = 'V'
-        cell = None
         while True:
             cell = self.active_sheet.range(f'{column}{row}')
             if cell.value is None:
@@ -133,14 +106,6 @@ class WorkbookHandler():
 
         for value in sample_data['co_case_count']:
             self.active_sheet.range(f'{columns[value-1]}{row+3}').value = sample_data['co_case_count'][value]
-
-        # logger.debug(sample_data)
-
-    def cperf(self):
-        ...
-
-    def lperf(self):
-        ...
 
     def copy_rows(self) -> None:
         """
@@ -407,8 +372,6 @@ class WorkbookHandler():
         Saves workbook
         :return: None
         """
-        # import sys
-        # sys.exit()
         self._wb.save(f"{self._path}")
 
     def close(self) -> None:

@@ -43,13 +43,11 @@ class DataPuller:
 
     def production_report(self, projectid, date: datetime.date) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         try:
-            cnxn = self.dbai.connect_engine()
-            data = self.sqld.production_report(projectid, date)
-            productionReport = pd.read_sql_query(text(data[0]), cnxn)
-            productionReportDispo = pd.read_sql_query(text(data[1]), cnxn)
-            productionReportDailyAVG = pd.read_sql_query(text(data[2]), cnxn)
-            cnxn.close()
-            del cnxn
+            with self.dbai.connect_engine() as cnxn:
+                data = self.sqld.production_report(projectid, date)
+                productionReport = pd.read_sql_query(text(data[0]), cnxn)
+                productionReportDispo = pd.read_sql_query(text(data[1]), cnxn)
+                productionReportDailyAVG = pd.read_sql_query(text(data[2]), cnxn)
             return productionReport, productionReportDispo, productionReportDailyAVG
         except Exception as err:
             raise err
@@ -107,11 +105,8 @@ class DataPuller:
               executing multiple queries.
         """
         try:
-            # self.dbai.voxco_db(database)
-            cnxn = self.dbai.connect_engine()
-            df = pd.read_sql_query(text(self.sqld.voxco_sample_data(database, date)), cnxn)
-            cnxn.close()
-            del cnxn
+            with self.dbai.connect_engine() as cnxn:
+                df = pd.read_sql_query(text(self.sqld.voxco_sample_data(database, date)), cnxn)
 
             # NOTE: This is faster than running queries. It takes double the time to run multiple queries.
 
@@ -134,14 +129,6 @@ class DataPuller:
                 for key, value in dfs.items()
             }
 
-            logger.debug(df.shape[0])
-            logger.debug(dfs['used_sample_call_count_1'].shape[0])
-            logger.debug(dfs['used_sample_call_count_2'].shape[0])
-            logger.debug(dfs['used_sample_call_count_3'].shape[0])
-            logger.debug(dfls['live_connects_call_count_1'].shape[0])
-            logger.debug(dfls['live_connects_call_count_2'].shape[0])
-            logger.debug(dfls['live_connects_call_count_3'].shape[0])
-
             data = {
                 'used_sample_call_count': {n: dfs[f'used_sample_call_count_{n}'].shape[0] for n in range(1, 7)},
                 'live_connects_call_count': {n: dfls[f'live_connects_call_count_{n}'].shape[0] for n in range(1, 7)},
@@ -154,18 +141,14 @@ class DataPuller:
 
     def get_prel_data_sample(self, database: str, date):
         try:
-            # self.dbai.voxco_db(database)
-            cnxn = self.dbai.connect_engine()
-            logger.debug(cnxn)
-            logger.debug(self.dbai.get_info())
-            df = pd.read_sql_query(text(self.sqld.voxco_prel_sample_data(database, date)), cnxn)
-            cnxn.close()
-            del cnxn
+            with self.dbai.connect_engine() as cnxn:
+                df = pd.read_sql_query(text(self.sqld.voxco_prel_sample_data(database, date)), cnxn)
+                unscanned = pd.read_sql_query(text(self.sqld.voxco_unscanned_sample_data(database, date)), cnxn)
 
             # NOTE: This is faster than running queries. It takes double the time to run multiple queries.
 
             filters = [0, 1, 2, 3, 4, 5]
-            dfs = {'prel_<>': df[df['RpsContent'].isna()]}
+            dfs = {'prel_<>': unscanned[['RpsContent', 'HisCaseResult']]}
             dfs.update({f"prel_{n}": df[df['RpsContent'] == str(n)] for n in filters})
 
             dfco = {
@@ -178,13 +161,6 @@ class DataPuller:
                 'co': {key.replace('co_', ''): dfco[key].shape[0] for key in dfco}
             }
 
-            logger.debug(data)
-
             return data
         except Exception as err:
             raise err
-
-
-
-
-

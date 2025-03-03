@@ -1,3 +1,4 @@
+import json
 from typing import Dict
 
 import pandas as pd
@@ -106,7 +107,7 @@ class DataPuller:
         """
         try:
             with self.dbai.connect_engine() as cnxn:
-                df = pd.read_sql_query(text(self.sqld.voxco_sample_data(database, date)), cnxn)
+                df = pd.read_sql_query(text(self.sqld.voxco_scanned_sample_data(database, date)), cnxn)
 
             # NOTE: This is faster than running queries. It takes double the time to run multiple queries.
 
@@ -160,7 +161,18 @@ class DataPuller:
                 'total': {key.replace('prel_', ''): dfs[key].shape[0] for key in dfs},
                 'co': {key.replace('co_', ''): dfco[key].shape[0] for key in dfco}
             }
-
+            data = {
+                'total': {
+                    '<>': dfs['prel_<>'].shape[0],
+                    '0': sum(dfs[key].shape[0] for key in ['prel_0', 'prel_1']),
+                    '1': sum(dfs[key].shape[0] for key in ['prel_2', 'prel_3', 'prel_4', 'prel_5'])
+                },
+                'co': {
+                    '<>': dfco['co_<>'].shape[0],
+                    '0': sum(dfco[key].shape[0] for key in ['co_0', 'co_1']),
+                    '1': sum(dfco[key].shape[0] for key in ['co_2', 'co_3', 'co_4', 'co_5'])
+                }
+            }
             return data
         except Exception as err:
             raise err

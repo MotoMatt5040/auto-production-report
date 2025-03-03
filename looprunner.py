@@ -11,7 +11,7 @@ from utils.logger_config import logger
 dpull = DataPuller.DataPuller()
 wh = WorkbookHandler.WorkbookHandler()
 dbai = DataBaseAccessInfo()
-logger.debug("STARTING")
+logger.info("STARTING")
 
 # TODO come up with a way to choose older projects
 active_id_df = dpull.active_project_ids()
@@ -67,7 +67,7 @@ def read_excel():
     wh.populate_all()
     wh.populate_expected_loi()
 
-    logger.debug(wh.project_code)
+    logger.info(wh.project_code)
     voxco_db_number = dpull.get_voxco_project_database(wh.project_code)['ProjectDatabase'][0]
     dbai.voxco_db(voxco_db_number)
     sample = dpull.get_voxco_data_sample(voxco_db_number, wh.date)
@@ -102,7 +102,7 @@ def run_loop():
                 wh.set_workbook()
             prev = projectNumber
 
-            logger.debug(f'Completed - {project} - {active_id_df["recdate"][loc]}')
+            logger.info(f'Completed - {project} - {active_id_df["recdate"][loc]}')
             wh.date = active_id_df['recdate'][loc]
             read_excel()
 

@@ -52,8 +52,14 @@ class WorkbookHandler():
     def populate_perf(self, sample_data, prel_data):
         # TODO Add INC and True Mean to data. It is in the lower table. True Mean = True Avg. Length and INC = True incidence
         # TODO Auto populate the date in the A column on the left side of the table using 16-JUL format
-        self.active_sheet.range('A2').options(index=False, header=False).value = f"{self._projectCode} {self._dispoData['projname'][0]}"
-
+        try:
+            self.active_sheet.range('A2').options(index=False, header=False).value = f"{self._projectCode} {self._dispoData['projname'][0]}"
+        except ValueError as e:
+            logger.info(f"No {self.get_active_sheet_name()}")
+            return
+        except KeyError as e:
+            logger.info(f"No {self.get_active_sheet_name()}")
+            return
         columns = ['X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']
 
         row = 30

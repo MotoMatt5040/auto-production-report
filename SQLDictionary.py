@@ -15,10 +15,10 @@ class SQLDictionary:
             time_delta = 3
         else:
             time_delta = 1
-        projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"
+        projectids = f"{os.environ['active_project_ids']} '{date.today() - timedelta(time_delta)}'"# and (projectid = '13071C' or projectid = '13071')"
         # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2024-07-29' and RecDate <= '2024-07-31' and projectid = '12886C'"#" or projectid = '12886'"
         # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2025-01-28' and projectid = '13044C'"
-        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate >= '2025-02-18'"
+        # projectids = "SELECT DISTINCT projectid , recdate FROM tblGPCPHDaily WHERE RecDate = '2025-02-23' and (projectid = '13055' or projectid = '13055C') "
         # projectids = f"{os.environ['active project ids']} '2024-05-24'"
         return projectids
 
@@ -32,6 +32,11 @@ class SQLDictionary:
         productionReportAVGLength = f"{os.environ['production_report_avg_length']}{projectid}{os.environ['production_report_avg_length_and']}{date_}'"
 
         d = productionReport, productionReportDispo, productionReportAVGLength
+
+        # for item in d:
+        #     print(item)
+
+        # quit()
 
         return d
 
@@ -80,3 +85,11 @@ class SQLDictionary:
             AND {os.environ['call_date']} < '{end_date} 10:00'
         """
         return qry
+
+if __name__ == "__main__":
+    from dotenv import load_dotenv
+    load_dotenv()
+    sqld = SQLDictionary()
+    projectid = '12886C'
+    date_ = '2024-07-31'
+    sqld.production_report(projectid, date_)

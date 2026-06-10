@@ -1,3 +1,18 @@
+"""Excel workbook handling via xlwings (Excel COM + the BLANK_Production VBA macro).
+
+Rewrite of ``WorkbookHandler`` that PRESERVES the Excel behavior exactly — same VBA
+macro call, same cell layout, same fill-down formulas, same perf-sheet row scans. The
+only changes are robustness:
+
+* The ``xw.App`` is created lazily (``start()`` / context manager), not at import time,
+  and is always quit in a ``finally`` by the runner.
+* Opening a locked workbook raises :class:`WorkbookLockedError` instead of blocking on
+  ``input()`` — the runner carries the project over to the next run.
+* A duplicate sheet name raises :class:`SheetAlreadyExistsError` (was a malformed
+  ``raise (e, ...)``); the runner logs it and skips.
+"""
+from __future__ import annotations
+
 import os
 import shutil
 from datetime import date, timedelta
@@ -8,13 +23,19 @@ import numpy as np
 import pandas as pd
 import xlwings as xw
 
+from app.exceptions import SheetAlreadyExistsError, WorkbookError, WorkbookLockedError
 from utils.logger_config import logger
 
 
-class WorkbookHandler():
-    app = xw.App(visible=True, add_book=False)
+class WorkbookHandler:
+    """Manages one Excel application instance and the workbook currently open in it.
+
+    Lifecycle: ``start()`` (or use as a context manager) → set project/date → open →
+    populate → ``save()`` / ``close()`` → ``quit()``.
+    """
 
     def __init__(self):
+        self.app: xw.App | None = None
         self._projectid = None
         self._projectCode = None
         self._path = None
@@ -24,11 +45,30 @@ class WorkbookHandler():
         self._productionData = pd.DataFrame
         self._date = date.today() - timedelta(1)
 
+    # -- application lifecycle ---------------------------------------------
+    def start(self) -> "WorkbookHandler":
+        if self.app is None:
+            self.app = xw.App(visible=True, add_book=False)
+        return self
+
+    def __enter__(self) -> "WorkbookHandler":
+        return self.start()
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.quit()
+
+    def quit(self) -> None:
+        if self.app is not None:
+            try:
+                self.app.quit()
+            except Exception as e:  # noqa: BLE001 - best-effort teardown
+                logger.warning("Error quitting Excel app: %s", e)
+            finally:
+                self.app = None
+
+    # -- populate -----------------------------------------------------------
     def populate_all(self):
-        """
-        Populates all fields in sheet
-        :return: None
-        """
+        """Populates the header cells and the employee table."""
         self.populate_row('A1', self._projectCode)
         self.populate_row('B1', self._dispoData['projname'])
         self.populate_row('A2', self._date.strftime("%B %d, %Y (%a)"))
@@ -53,17 +93,17 @@ class WorkbookHandler():
         # TODO Add INC and True Mean to data. It is in the lower table. True Mean = True Avg. Length and INC = True incidence
         # TODO Auto populate the date in the A column on the left side of the table using 16-JUL format
         try:
-            self.active_sheet.range('A2').options(index=False, header=False).value = f"{self._projectCode} {self._dispoData['projname'][0]}"
-        except ValueError as e:
-            logger.info(f"No {self.get_active_sheet_name()}")
+            self.active_sheet.range('A2').options(index=False, header=False).value = \
+                f"{self._projectCode} {self._dispoData['projname'][0]}"
+        except (ValueError, KeyError):
+            logger.info("No %s", self.get_active_sheet_name())
             return
-        except KeyError as e:
-            logger.info(f"No {self.get_active_sheet_name()}")
-            return
+
         columns = ['X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']
 
         row = 30
         column = 'V'
+        cell = None
         while True:
             cell = self.active_sheet.range(f'{column}{row}')
             if cell.value is None:
@@ -71,29 +111,24 @@ class WorkbookHandler():
             row += 3
 
         if cell is None:
-            raise ValueError("Cell is None. Please check the V column date cell start at 30 and increments by 3.")
+            raise WorkbookError(
+                "Cell is None. Please check the V column date cell start at 30 and increments by 3."
+            )
 
         cell.value = self._date
         cell.number_format = "d-mmm"
 
         for key, value in prel_data['total'].items():
-            # logger.debug(f"{key}, {value}")
-            if key == '<>':
-                column_index = 0
-            else:
-                column_index = int(key) + 1
-
+            column_index = 0 if key == '<>' else int(key) + 1
             self.active_sheet.range(f'{columns[column_index]}{row}').value = value
 
         for key, value in prel_data['co'].items():
-            if key == '<>':
-                column_index = 0
-            else:
-                column_index = int(key) + 1
+            column_index = 0 if key == '<>' else int(key) + 1
             self.active_sheet.range(f'{columns[column_index]}{row + 1}').value = value
 
         row = 54
         column = 'V'
+        cell = None
         while True:
             cell = self.active_sheet.range(f'{column}{row}')
             if cell.value is None:
@@ -101,27 +136,27 @@ class WorkbookHandler():
             row += 6
 
         if cell is None:
-            raise ValueError("Cell is None. Please check the V column date cell start at 54 and increments by 6.")
+            raise WorkbookError(
+                "Cell is None. Please check the V column date cell start at 54 and increments by 6."
+            )
 
         cell.value = self._date
         cell.number_format = "d-mmm"
 
         for value in sample_data['used_sample_call_count']:
-            self.active_sheet.range(f'{columns[value-1]}{row}').value = sample_data['used_sample_call_count'][value]
+            self.active_sheet.range(f'{columns[value - 1]}{row}').value = \
+                sample_data['used_sample_call_count'][value]
 
         for value in sample_data['live_connects_call_count']:
-            self.active_sheet.range(f'{columns[value-1]}{row+1}').value = sample_data['live_connects_call_count'][value]
+            self.active_sheet.range(f'{columns[value - 1]}{row + 1}').value = \
+                sample_data['live_connects_call_count'][value]
 
         for value in sample_data['co_case_count']:
-            self.active_sheet.range(f'{columns[value-1]}{row+3}').value = sample_data['co_case_count'][value]
+            self.active_sheet.range(f'{columns[value - 1]}{row + 3}').value = \
+                sample_data['co_case_count'][value]
 
     def copy_rows(self) -> None:
-        """
-        Extends rows
-        :param count: Number of rows to copy
-        :return: None
-        """
-
+        """Fills the employee data table A8:V{n}, pulling formula columns from row 8."""
         count = self._productionReportData.shape[0] + 7
 
         self.populate_row(f'A8:A{count}', self._productionReportData['eid'])
@@ -131,94 +166,57 @@ class WorkbookHandler():
         self.populate_row(f'E8:E{count}', self._productionReportData['hrs'])
         self.populate_row(f'F8:F{count}', self._productionReportData['connecttime'])
 
-        formula = self._activeSheet.range("G8").formula
-        self.populate_row(f'G8:G{count}', formula)
+        self.populate_row(f'G8:G{count}', self._activeSheet.range("G8").formula)
 
         self.populate_row(f'H8:H{count}', self._productionReportData['pausetime'])
 
-        formula = self._activeSheet.range("I8").formula
-        self.populate_row(f'I8:I{count}', formula)
-
-        formula = self._activeSheet.range("J8").formula
-        self.populate_row(f'J8:J{count}', formula)
-
-        formula = self._activeSheet.range("K8").formula
-        self.populate_row(f'K8:K{count}', formula)
+        self.populate_row(f'I8:I{count}', self._activeSheet.range("I8").formula)
+        self.populate_row(f'J8:J{count}', self._activeSheet.range("J8").formula)
+        self.populate_row(f'K8:K{count}', self._activeSheet.range("K8").formula)
 
         self.populate_row(f'L8:L{count}', self._productionReportData['cms'])
 
-        formula = self._activeSheet.range("M8").formula
-        self.populate_row(f'M8:M{count}', formula)
-
-        formula = self._activeSheet.range("N8").formula
-        self.populate_row(f'N8:N{count}', formula)
-
-        formula = self._activeSheet.range("O8").formula
-        self.populate_row(f'O8:O{count}', formula)
-
-        formula = self._activeSheet.range("P8").formula
-        self.populate_row(f'P8:P{count}', formula)
+        self.populate_row(f'M8:M{count}', self._activeSheet.range("M8").formula)
+        self.populate_row(f'N8:N{count}', self._activeSheet.range("N8").formula)
+        self.populate_row(f'O8:O{count}', self._activeSheet.range("O8").formula)
+        self.populate_row(f'P8:P{count}', self._activeSheet.range("P8").formula)
 
         self.populate_row(f'Q8:Q{count}', self._productionReportData['intal'])
 
-        formula = self._activeSheet.range("R8").formula
-        self.populate_row(f'R8:R{count}', formula)
+        self.populate_row(f'R8:R{count}', self._activeSheet.range("R8").formula)
 
         self.populate_row(f'S8:S{count}', self._productionReportData['mph'])
-
         self.populate_row(f'T8:T{count}', self._productionReportData['totaldials'])
 
-        formula = self._activeSheet.range("U8").formula
-        self.populate_row(f'U8:U{count}', formula)
-
-        formula = self._activeSheet.range("V8").formula
-        self.populate_row(f'V8:V{count}', formula)
+        self.populate_row(f'U8:U{count}', self._activeSheet.range("U8").formula)
+        self.populate_row(f'V8:V{count}', self._activeSheet.range("V8").formula)
 
     def populate_expected_loi(self):
-        """
-        Pulls Expected LOI from <YEAR>PLANNER and populates the production report cell
-        :return: None
-        """
+        """Pulls Expected LOI and populates the production report cell."""
         self._activeSheet.range('R1').options(index=False, header=False).value = self._dispoData['mean']
 
     def copy_sheet(self) -> None:
-        """
-        Copies sheet
-        :return: None
-        """
-        copySheet = self._wb.macro("Module1.copySheetTEST")  # Parameters (blankPath: str, path: str, projectid: str, sheet: int)
-
+        """Runs the VBA macro that copies the template sheet (preserves formulas/styling)."""
+        copySheet = self._wb.macro("Module1.copySheetTEST")  # (sheet: int)
         if self._projectCode[-1].upper() == "C":
             copySheet(2)
         else:
             copySheet(1)
-        del copySheet
 
+    # -- filesystem / template ---------------------------------------------
     def check_path(self):
-        if not os.path.exists(Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/")):
-            src = Path(f"{os.environ['src']}PRODUCTION/BLANK_Production.xlsm")
-            os.mkdir(Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/"))
-            dst = self.path
-            shutil.copy(src, dst)
-            del src, dst
-        elif not os.path.exists(self.path):
-            src = Path(f"{os.environ['src']}PRODUCTION/BLANK_Production.xlsm")
-            dst = self.path
-            shutil.copy(src, dst)
-            del src, dst
-        else:
-            return
+        production_dir = Path(os.environ['src']) / self._projectid / 'PRODUCTION'
+        blank = Path(os.environ['src']) / 'PRODUCTION' / 'BLANK_Production.xlsm'
+        if not production_dir.exists():
+            production_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(blank, self.path)
+        elif not Path(self.path).exists():
+            shutil.copy(blank, self.path)
 
     def create_sheet_name(self):
-        """
-        Creates sheet Name
-        :return: None
-        """
         return f"{self.project_code} {self._date.strftime('%m%d')}"
 
-    def set_app(self):
-        self.app = xw.App(visible=True)
-
+    # -- properties ---------------------------------------------------------
     @property
     def sheet_index(self):
         return self._activeSheet.index
@@ -229,15 +227,7 @@ class WorkbookHandler():
 
     @project_id.setter
     def project_id(self, projectid: Union[int, str]) -> None:
-        """
-        Sets project ID
-        :param projectid: Int or String of Project ID
-        :return: None
-        """
-        if type(projectid) == int:
-            self._projectid = str(projectid)
-        else:
-            self._projectid = projectid
+        self._projectid = str(projectid)
 
     @property
     def project_code(self):
@@ -245,18 +235,7 @@ class WorkbookHandler():
 
     @project_code.setter
     def project_code(self, projectCode) -> None:
-        """
-        Sets Project Code
-
-        Project code is defined as the projects directory ID.
-        This is needed to identify projects such as #####C and name them accordingly.
-        :param projectCode: Int or String of Project Code
-        :return: None
-        """
-        if type(projectCode) == int:
-            self._projectCode = str(projectCode)
-        else:
-            self._projectCode = projectCode
+        self._projectCode = str(projectCode)
 
     @property
     def path(self):
@@ -264,13 +243,9 @@ class WorkbookHandler():
 
     @path.setter
     def path(self, path: Path = None) -> None:
-        """
-        Sets path
-        :param path: Filepath
-        :return: None
-        """
         if path is None:
-            path = Path(f"{os.environ['src']}{self._projectid}/PRODUCTION/{self._projectid}_Production_Report.xlsm")
+            path = Path(os.environ['src']) / self._projectid / 'PRODUCTION' / \
+                f"{self._projectid}_Production_Report.xlsm"
         self._path = path
 
     @property
@@ -278,16 +253,17 @@ class WorkbookHandler():
         return self._wb
 
     def set_workbook(self, path: str = None) -> None:
-        """
-        Sets workbook
-        :param path: Filepath
-        :return: None
-        """
+        """Opens the workbook. Raises WorkbookLockedError if it is locked/open elsewhere."""
         if path is None:
             path = self.path
-
         self._path = path
-        self._wb = self.app.books.open(self._path)
+        try:
+            self._wb = self.app.books.open(self._path)
+        except Exception as e:  # noqa: BLE001 - xlwings/pywin32 raises generic errors
+            msg = str(e).lower()
+            if "being used" in msg or "locked" in msg or "permission" in msg or "in use" in msg:
+                raise WorkbookLockedError(f"{self._path} is locked/open: {e}") from e
+            raise WorkbookError(f"Could not open {self._path}: {e}") from e
 
     @property
     def active_sheet(self):
@@ -295,11 +271,6 @@ class WorkbookHandler():
 
     @active_sheet.setter
     def active_sheet(self, activeSheet: Union[int, str] = None) -> None:
-        """
-        Sets active sheet
-        :param activeSheet: Sheet Name
-        :return: None
-        """
         if activeSheet is None:
             activeSheet = f"{self.get_active_sheet_name()}"
         self._activeSheet = self.workbook.sheets[activeSheet]
@@ -310,28 +281,25 @@ class WorkbookHandler():
         return self.active_sheet.name
 
     def get_active_sheet_name(self):
-        """
-        Gets active sheet Name
-        :return: Active Sheet Name
-        """
         if self.active_sheet.name is None:
             return 'No active sheet Name'
         return self.active_sheet.name
 
     def set_active_sheet_name(self, sheetName: str = None) -> None:
-        """
-        Sets active sheet Name
-        :param sheetName: Sheet Name
-        :return: sheetName String
+        """Renames the active sheet to ``{code} {MMDD}``.
+
+        If that name already exists (a re-run of an already-generated project/date),
+        raises :class:`SheetAlreadyExistsError` for the runner to log and skip.
         """
         if sheetName is None:
             sheetName = self._projectCode
         self._activeSheetName = f"{sheetName} {self._date.strftime('%m%d')}"
         try:
             self._wb.active.name = self._activeSheetName
-        except Exception as e:
-            print("sheet name already taken", self._activeSheetName)
-            raise (e, "sheet name already taken", self._activeSheetName)
+        except Exception as e:  # noqa: BLE001 - xlwings raises generic COM errors
+            raise SheetAlreadyExistsError(
+                f"Sheet '{self._activeSheetName}' already exists (already generated?)"
+            ) from e
 
     @property
     def data(self):
@@ -339,20 +307,16 @@ class WorkbookHandler():
 
     @data.setter
     def data(self, data: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]) -> None:
-        """
-        Sets Production Data
-        :param data: Pandas Dataframe
-        :return: None
-        """
         productionReportData = data[0]
-        productionReportData['intal'] = np.where(productionReportData['cms'] > 0, productionReportData['intal'], np.nan)
-        productionReportData['mph'] = productionReportData['mph'].where(productionReportData['mph'] != 0.00, np.nan)
-        dispoData = data[1]
-        dailyAVGData = data[2]
-
+        productionReportData['intal'] = np.where(
+            productionReportData['cms'] > 0, productionReportData['intal'], np.nan
+        )
+        productionReportData['mph'] = productionReportData['mph'].where(
+            productionReportData['mph'] != 0.00, np.nan
+        )
         self._productionReportData = productionReportData
-        self._dispoData = dispoData
-        self._dailyAVGData = dailyAVGData
+        self._dispoData = data[1]
+        self._dailyAVGData = data[2]
         self._data = data
 
     @property
@@ -375,16 +339,11 @@ class WorkbookHandler():
     def date(self, date_):
         self._date = date_
 
+    # -- save / close -------------------------------------------------------
     def save(self) -> None:
-        """
-        Saves workbook
-        :return: None
-        """
         self._wb.save(f"{self._path}")
 
     def close(self) -> None:
-        self._wb.close()
-        # self.app.close()
-
-    def app_quit(self) -> None:
-        self.app.quit()
+        if self._wb is not None:
+            self._wb.close()
+            self._wb = None

@@ -1,27 +1,31 @@
 # logger_config.py
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
+
 from utils.logging_format import CustomFormatter
-import os
 
-# Set up the main logger
-logger = logging.getLogger('log')
+# Logs live in a project-relative logs/ directory (created if missing), not an absolute /logs path.
+LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = LOG_DIR / "logs.log"
 
-# File handler with monthly rotation
-fh = TimedRotatingFileHandler('/logs/logs.log', when='W0', interval=1, backupCount=3)
-plain_formatter = logging.Formatter("%(asctime)s - %(name)s - %(filename)s - %(levelname)s - Line: %(lineno)d - %(message)s")
-fh.setFormatter(plain_formatter)
-logger.addHandler(fh)
+logger = logging.getLogger("log")
 
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(CustomFormatter())
-logger.addHandler(ch)
+# Guard against duplicate handlers if this module is imported more than once.
+if not logger.handlers:
+    # Weekly rotation (Mondays), keep 3 backups.
+    fh = TimedRotatingFileHandler(LOG_FILE, when="W0", interval=1, backupCount=3, encoding="utf-8")
+    fh.setFormatter(
+        logging.Formatter(
+            "%(asctime)s - %(name)s - %(filename)s - %(levelname)s - Line: %(lineno)d - %(message)s"
+        )
+    )
+    logger.addHandler(fh)
 
-logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(CustomFormatter())
+    logger.addHandler(ch)
 
-logger.debug('Enabled')
-logger.info('Enabled')
-logger.warning('Enabled')
-logger.error('Enabled')
-logger.critical('Enabled')
+    logger.setLevel(logging.DEBUG)
